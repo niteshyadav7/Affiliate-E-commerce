@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Edit2, Trash2, Link as LinkIcon, Plus, ExternalLink } from 'lucide-react';
+import { Edit2, Trash2, Link as LinkIcon, Plus, ExternalLink, Upload, X, FileText, AlertCircle, CheckCircle2 } from 'lucide-react';
 import Button from '@/components/atoms/Button';
 import ProductForm from './ProductForm';
 
@@ -10,6 +10,7 @@ export default function ProductTable() {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -69,12 +70,23 @@ export default function ProductTable() {
         />
       )}
 
+      <BulkUploadModal 
+        isOpen={isBulkUploadOpen}
+        onClose={() => setIsBulkUploadOpen(false)}
+        onUploadComplete={fetchProducts}
+      />
+
       <div className="bg-white rounded-2xl shadow-sm border border-surface-container-low overflow-hidden">
         <div className="p-6 border-b border-surface-container-low flex justify-between items-center">
           <h2 className="font-display text-xl font-bold text-primary">All Products</h2>
-          <Button size="sm" className="flex items-center gap-2" onClick={() => { setEditingProduct(null); setIsEditing(true); }}>
-            <Plus className="w-4 h-4" /> Add Product
-          </Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" className="flex items-center gap-2 text-xs" onClick={() => setIsBulkUploadOpen(true)}>
+              <Upload className="w-4 h-4" /> Bulk Upload
+            </Button>
+            <Button size="sm" className="flex items-center gap-2 text-xs" onClick={() => { setEditingProduct(null); setIsEditing(true); }}>
+              <Plus className="w-4 h-4" /> Add Product
+            </Button>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -154,3 +166,329 @@ export default function ProductTable() {
     </>
   );
 }
+
+function BulkUploadModal({ isOpen, onClose, onUploadComplete }: { isOpen: boolean; onClose: () => void; onUploadComplete: () => void }) {
+  const [file, setFile] = useState<File | null>(null);
+  const [parsedProducts, setParsedProducts] = useState<any[]>([]);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  const downloadSampleCSV = () => {
+    const headers = ['Name', 'Category', 'Price', 'Image URL', 'Description', 'Redirect URLs'];
+    const sampleRows = [
+      [
+        'Acoustic Pro Max',
+        'Electronics',
+        '$299.00',
+        'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500',
+        'Modern noise-cancelling headphones in space grey.',
+        'Amazon|https://amazon.com/dp/B09XS7JWHH;BestBuy|https://bestbuy.com/site/headphones'
+      ],
+      [
+        'Velocity Run V2',
+        'New Arrival',
+        '$120.00',
+        'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500',
+        'Luxury performance running shoes.',
+        'Nike Store|https://nike.com;https://footlocker.com'
+      ]
+    ];
+    
+    const csvContent = [
+      headers.join(','),
+      ...sampleRows.map(row => row.map(val => `"${val.replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'shopverse_bulk_upload_template.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      processFile(selectedFile);
+    }
+  };
+
+  const processFile = (selectedFile: File) => {
+    setFile(selectedFile);
+    setErrors([]);
+    setParsedProducts([]);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        const rows = parseCSV(text);
+        
+        if (rows.length < 2) {
+          setErrors(['The CSV file must contain a header row and at least one product row.']);
+          return;
+        }
+
+        const headers = rows[0].map(h => h.trim().toLowerCase());
+        const nameIndex = headers.indexOf('name');
+        const categoryIndex = headers.indexOf('category');
+        const priceIndex = headers.indexOf('price');
+        const imageUrlIndex = headers.indexOf('image url');
+        const descriptionIndex = headers.indexOf('description');
+        const redirectUrlsIndex = headers.indexOf('redirect urls');
+
+        if (nameIndex === -1 || priceIndex === -1) {
+          setErrors(['CSV must contain at least "Name" and "Price" columns.']);
+          return;
+        }
+
+        const products: any[] = [];
+        const fileErrors: string[] = [];
+
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i];
+          if (row.length === 1 && row[0] === '') continue; // Skip empty rows
+
+          const name = row[nameIndex]?.trim();
+          const category = row[categoryIndex]?.trim() || 'General';
+          const price = row[priceIndex]?.trim();
+          const image_url = row[imageUrlIndex]?.trim() || '';
+          const description = row[descriptionIndex]?.trim() || '';
+          const redirectUrlsText = row[redirectUrlsIndex]?.trim() || '';
+
+          if (!name) {
+            fileErrors.push(`Row ${i + 1}: Product name is required.`);
+            continue;
+          }
+          if (!price) {
+            fileErrors.push(`Row ${i + 1}: Price is required.`);
+            continue;
+          }
+
+          // Parse links (Semicolon separated, optional Label|URL)
+          const links: any[] = [];
+          if (redirectUrlsText) {
+            const urlTokens = redirectUrlsText.split(';');
+            urlTokens.forEach((token) => {
+              const trimmedToken = token.trim();
+              if (trimmedToken) {
+                if (trimmedToken.includes('|')) {
+                  const [label, url] = trimmedToken.split('|');
+                  links.push({ label: label.trim(), url: url.trim() });
+                } else {
+                  links.push({ label: 'Link', url: trimmedToken });
+                }
+              }
+            });
+          }
+
+          products.push({
+            name,
+            category,
+            price,
+            image_url,
+            description,
+            links
+          });
+        }
+
+        if (fileErrors.length > 0) {
+          setErrors(fileErrors);
+        }
+        setParsedProducts(products);
+      } catch (err: any) {
+        setErrors([`Failed to parse CSV file: ${err.message}`]);
+      }
+    };
+    reader.readAsText(selectedFile);
+  };
+
+  const parseCSV = (text: string) => {
+    const lines = [];
+    let row = [""];
+    let inQuotes = false;
+
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      const nextChar = text[i + 1];
+
+      if (char === '"') {
+        if (inQuotes && nextChar === '"') {
+          row[row.length - 1] += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        row.push('');
+      } else if ((char === '\r' || char === '\n') && !inQuotes) {
+        if (char === '\r' && nextChar === '\n') {
+          i++;
+        }
+        lines.push(row);
+        row = [''];
+      } else {
+        row[row.length - 1] += char;
+      }
+    }
+    if (row.length > 1 || row[0] !== '') {
+      lines.push(row);
+    }
+    return lines;
+  };
+
+  const handleUpload = async () => {
+    if (parsedProducts.length === 0) return;
+    setLoading(true);
+    try {
+      const res = await fetch('/api/products/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ products: parsedProducts })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to upload products');
+      setSuccess(true);
+      setTimeout(() => {
+        onUploadComplete();
+        onClose();
+        resetModal();
+      }, 1500);
+    } catch (err: any) {
+      setErrors([err.message]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetModal = () => {
+    setFile(null);
+    setParsedProducts([]);
+    setErrors([]);
+    setSuccess(false);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-primary/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl w-full max-w-2xl border border-surface-container shadow-2xl p-6 overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="flex justify-between items-center mb-4 flex-shrink-0">
+          <h3 className="font-display text-lg font-bold text-primary flex items-center gap-2">
+            <Upload className="w-5 h-5 text-primary" /> Bulk Upload Products
+          </h3>
+          <button onClick={() => { onClose(); resetModal(); }} className="p-2 hover:bg-surface-container-low rounded-full transition-colors cursor-pointer">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+          {success ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <CheckCircle2 className="w-16 h-16 text-green-500 mb-4 animate-bounce" />
+              <h4 className="font-display text-lg font-bold text-primary">Upload Successful!</h4>
+              <p className="text-sm text-on-secondary-container opacity-80 mt-1">
+                Successfully imported {parsedProducts.length} products.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="bg-surface/50 border border-outline/10 p-4 rounded-2xl flex justify-between items-center">
+                <div>
+                  <h4 className="text-xs font-bold text-primary">Need the template format?</h4>
+                  <p className="text-[11px] text-on-secondary-container opacity-80">
+                    Download our structured sample CSV file to ensure your data fits.
+                  </p>
+                </div>
+                <Button type="button" variant="outline" size="sm" className="text-[10px] flex items-center gap-1.5" onClick={downloadSampleCSV}>
+                  <FileText className="w-3.5 h-3.5" /> Sample Template
+                </Button>
+              </div>
+
+              <div 
+                className="border-2 border-dashed border-outline/25 hover:border-primary/50 transition-colors rounded-2xl p-8 text-center bg-surface/10 cursor-pointer relative"
+                onClick={() => document.getElementById('csv-file-input')?.click()}
+              >
+                <input 
+                  type="file"
+                  id="csv-file-input"
+                  className="hidden"
+                  accept=".csv"
+                  onChange={handleFileChange}
+                />
+                <Upload className="w-8 h-8 mx-auto text-on-secondary-container opacity-50 mb-3" />
+                <p className="text-sm font-bold text-primary">
+                  {file ? file.name : 'Select CSV file to upload'}
+                </p>
+                <p className="text-xs text-on-secondary-container opacity-60 mt-1">
+                  Drag and drop your file here, or click to browse
+                </p>
+              </div>
+
+              {errors.length > 0 && (
+                <div className="bg-red-50 border border-red-100 rounded-2xl p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-red-700 font-bold text-xs">
+                    <AlertCircle className="w-4 h-4" /> Errors occurred:
+                  </div>
+                  <ul className="list-disc pl-5 text-xs text-red-600 space-y-1 max-h-32 overflow-y-auto">
+                    {errors.map((err, idx) => (
+                      <li key={idx}>{err}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {parsedProducts.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-bold text-primary flex items-center justify-between">
+                    <span>Parsed Products ({parsedProducts.length})</span>
+                    <span className="text-[10px] opacity-70">Please review before uploading</span>
+                  </h4>
+                  <div className="border border-surface-container-low rounded-2xl p-3 bg-surface/20 divide-y divide-surface-container-low max-h-56 overflow-y-auto">
+                    {parsedProducts.map((p, idx) => (
+                      <div key={idx} className="py-2.5 first:pt-0 last:pb-0 flex justify-between items-start gap-4">
+                        <div>
+                          <div className="text-xs font-bold text-primary">{p.name}</div>
+                          <div className="text-[10px] text-on-secondary-container opacity-70">
+                            Category: {p.category} | Links: {p.links?.length || 0}
+                          </div>
+                          {p.description && (
+                            <div className="text-[10px] text-on-secondary-container opacity-50 truncate max-w-sm mt-0.5">
+                              {p.description}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-xs font-bold text-primary whitespace-nowrap">{p.price}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {!success && (
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-surface-container-low flex-shrink-0">
+            <Button type="button" variant="ghost" onClick={() => { onClose(); resetModal(); }} disabled={loading}>
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              onClick={handleUpload} 
+              disabled={loading || parsedProducts.length === 0 || errors.some(e => e.includes('required'))}
+            >
+              {loading ? 'Uploading...' : `Upload ${parsedProducts.length || ''} Products`}
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+

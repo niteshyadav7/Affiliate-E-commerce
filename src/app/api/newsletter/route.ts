@@ -45,3 +45,26 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+// DELETE: Remove a subscriber (for Admin Panel)
+export async function DELETE(request: Request) {
+  try {
+    const { email } = await request.json();
+
+    if (!email) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    }
+
+    const { error } = await supabaseServer
+      .from('newsletter_subscribers')
+      .delete()
+      .eq('email', email);
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true, message: 'Subscriber removed successfully!' });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+

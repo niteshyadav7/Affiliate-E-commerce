@@ -131,12 +131,19 @@ export default function ProductForm({ product, onSave, onCancel }: { product?: a
           </div>
           <div>
             <label className="block text-xs font-bold text-primary mb-1">Category</label>
-            <input 
+            <select 
               required
-              className="w-full px-4 py-2 border border-outline/20 rounded-lg"
+              className="w-full px-4 py-2 border border-outline/20 rounded-lg bg-white focus:outline-none focus:border-primary/50 cursor-pointer"
               value={formData.category}
               onChange={e => setFormData({...formData, category: e.target.value})}
-            />
+            >
+              <option value="General">General</option>
+              <option value="Electronics">Electronics</option>
+              <option value="Fashion">Fashion</option>
+              <option value="Lifestyle">Lifestyle</option>
+              <option value="Gadgets">Gadgets</option>
+              <option value="New Arrival">New Arrival</option>
+            </select>
           </div>
           <div>
             <label className="block text-xs font-bold text-primary mb-1">Price</label>

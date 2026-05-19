@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
-import { Package, BarChart3, Settings, LayoutDashboard } from 'lucide-react';
 import Link from 'next/link';
 import LogoutButton from '@/components/admin/LogoutButton';
+import SidebarNav from '@/components/admin/SidebarNav';
 
 export default async function AdminLayout({
   children,
@@ -28,24 +28,8 @@ export default async function AdminLayout({
           <p className="text-xs text-white/50 uppercase tracking-widest mt-1">Admin Panel</p>
         </div>
         
-        <nav className="flex-1 px-4 space-y-2 mt-8">
-          <Link href="/admin" className="flex items-center gap-3 px-4 py-3 bg-white/10 rounded-lg text-sm font-medium transition-colors hover:bg-white/20">
-            <LayoutDashboard className="w-4 h-4" />
-            Dashboard
-          </Link>
-          <Link href="/admin/products" className="flex items-center gap-3 px-4 py-3 text-white/70 hover:bg-white/5 rounded-lg text-sm font-medium transition-colors">
-            <Package className="w-4 h-4" />
-            Products
-          </Link>
-          <Link href="/admin/analytics" className="flex items-center gap-3 px-4 py-3 text-white/70 hover:bg-white/5 rounded-lg text-sm font-medium transition-colors">
-            <BarChart3 className="w-4 h-4" />
-            Analytics
-          </Link>
-          <Link href="/admin/settings" className="flex items-center gap-3 px-4 py-3 text-white/70 hover:bg-white/5 rounded-lg text-sm font-medium transition-colors">
-            <Settings className="w-4 h-4" />
-            Settings
-          </Link>
-        </nav>
+        <SidebarNav />
+
 
         <div className="p-4 border-t border-white/10">
           <LogoutButton />
