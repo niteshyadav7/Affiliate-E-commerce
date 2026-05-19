@@ -2,8 +2,16 @@ import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import { supabaseServer } from '@/lib/supabase-server';
 
+import { cookies } from 'next/headers';
+
 export async function POST(request: Request) {
   try {
+    const cookieStore = await cookies();
+    const role = cookieStore.get('admin_role')?.value;
+    if (role !== 'super_admin') {
+      return NextResponse.json({ error: 'Forbidden: Only Super Admins can send email campaigns' }, { status: 403 });
+    }
+
     const { subject, headingMessage } = await request.json();
 
     if (!subject || !headingMessage) {

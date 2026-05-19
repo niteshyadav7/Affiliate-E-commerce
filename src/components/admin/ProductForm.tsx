@@ -11,12 +11,23 @@ export default function ProductForm({ product, onSave, onCancel }: { product?: a
     price: product?.price || '',
     image_url: product?.image_url || '',
     category: product?.category || 'General',
+    slug: product?.slug || '',
     is_active: product ? product.is_active : true,
   });
   
   const [links, setLinks] = useState<any[]>(product?.product_links || []);
   const [deletedLinkIds, setDeletedLinkIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const slugify = (text: string) => {
+    return text
+      .toString()
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')         // Replace spaces with -
+      .replace(/[^\w\-]+/g, '')     // Remove all non-word chars
+      .replace(/\-\-+/g, '-');       // Replace multiple - with single -
+  };
 
   const addLink = () => {
     setLinks([...links, { label: 'Link', url: '', sort_order: links.length }]);
@@ -40,6 +51,12 @@ export default function ProductForm({ product, onSave, onCancel }: { product?: a
     e.preventDefault();
     setLoading(true);
 
+    const finalSlug = formData.slug.trim() ? slugify(formData.slug) : slugify(formData.name);
+    const dataToSubmit = {
+      ...formData,
+      slug: finalSlug
+    };
+
     try {
       let savedProduct;
       
@@ -49,7 +66,7 @@ export default function ProductForm({ product, onSave, onCancel }: { product?: a
         const res = await fetch(`/api/products/${product.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(dataToSubmit),
         });
         savedProduct = await res.json();
       } else {
@@ -57,10 +74,11 @@ export default function ProductForm({ product, onSave, onCancel }: { product?: a
         const res = await fetch('/api/products', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(dataToSubmit),
         });
         savedProduct = await res.json();
       }
+
 
       const productId = product?.id || savedProduct?.id;
 
@@ -156,6 +174,15 @@ export default function ProductForm({ product, onSave, onCancel }: { product?: a
             />
           </div>
           <div>
+            <label className="block text-xs font-bold text-primary mb-1">Short URL Slug (Optional)</label>
+            <input 
+              className="w-full px-4 py-2 border border-outline/20 rounded-lg"
+              value={formData.slug}
+              placeholder="e.g. discount-shoes (auto-generated if empty)"
+              onChange={e => setFormData({...formData, slug: e.target.value})}
+            />
+          </div>
+          <div className="md:col-span-2">
             <label className="block text-xs font-bold text-primary mb-1">Image URL</label>
             <input 
               className="w-full px-4 py-2 border border-outline/20 rounded-lg"

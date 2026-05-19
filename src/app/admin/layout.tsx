@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
-import Link from 'next/link';
 import LogoutButton from '@/components/admin/LogoutButton';
 import SidebarNav from '@/components/admin/SidebarNav';
+import LoginForm from '@/components/admin/LoginForm';
 
 export default async function AdminLayout({
   children,
@@ -9,12 +9,14 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const cookieStore = await cookies();
-  const isAuthenticated = cookieStore.get('admin_token')?.value === 'authenticated';
+  const adminToken = cookieStore.get('admin_token')?.value;
+  const adminRole = cookieStore.get('admin_role')?.value || 'viewer';
+  const isAuthenticated = !!adminToken;
 
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center p-4">
-        {children}
+        <LoginForm />
       </div>
     );
   }
@@ -28,7 +30,7 @@ export default async function AdminLayout({
           <p className="text-xs text-white/50 uppercase tracking-widest mt-1">Admin Panel</p>
         </div>
         
-        <SidebarNav />
+        <SidebarNav role={adminRole} />
 
 
         <div className="p-4 border-t border-white/10">

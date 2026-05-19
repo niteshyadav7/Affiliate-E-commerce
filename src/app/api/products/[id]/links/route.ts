@@ -1,11 +1,19 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
 
+import { cookies } from 'next/headers';
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const cookieStore = await cookies();
+    const role = cookieStore.get('admin_role')?.value;
+    if (role === 'viewer') {
+      return NextResponse.json({ error: 'Forbidden: Viewers cannot add links' }, { status: 403 });
+    }
+
     const { id } = await params;
     const body = await request.json();
     const { url, label, sort_order } = body;
@@ -30,6 +38,12 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const cookieStore = await cookies();
+    const role = cookieStore.get('admin_role')?.value;
+    if (role === 'viewer') {
+      return NextResponse.json({ error: 'Forbidden: Viewers cannot delete links' }, { status: 403 });
+    }
+
     // ID here might actually be the link ID. We need to pass link ID in query or body.
     // Let's use the URL for the DELETE method on the link endpoint: /api/products/[id]/links?linkId=...
     const url = new URL(request.url);
@@ -56,6 +70,12 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const cookieStore = await cookies();
+    const role = cookieStore.get('admin_role')?.value;
+    if (role === 'viewer') {
+      return NextResponse.json({ error: 'Forbidden: Viewers cannot edit links' }, { status: 403 });
+    }
+
     const { id } = await params;
     const body = await request.json();
     const { linkId, url, label, sort_order } = body;

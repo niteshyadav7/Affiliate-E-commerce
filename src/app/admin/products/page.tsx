@@ -1,6 +1,10 @@
 import ProductTable from '@/components/admin/ProductTable';
+import { cookies } from 'next/headers';
 
-export default function AdminProductsPage() {
+export default async function AdminProductsPage() {
+  const cookieStore = await cookies();
+  const role = cookieStore.get('admin_role')?.value || 'viewer';
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
@@ -8,7 +12,7 @@ export default function AdminProductsPage() {
         <p className="text-on-secondary-container mt-2">Manage your inventory, affiliate links, and visibility.</p>
       </div>
       
-      <ProductTable />
+      <ProductTable role={role} />
     </div>
   );
 }

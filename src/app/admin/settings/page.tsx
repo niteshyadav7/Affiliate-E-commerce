@@ -61,6 +61,17 @@ export default function SettingsPage() {
   };
 
   useEffect(() => {
+    const getCookie = (name: string) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop()?.split(';').shift();
+      return null;
+    };
+    const role = getCookie('admin_role');
+    if (role !== 'super_admin') {
+      window.location.href = '/admin';
+      return;
+    }
     fetchData();
   }, []);
 

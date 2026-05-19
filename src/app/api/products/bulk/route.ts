@@ -1,8 +1,26 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
 
+import { cookies } from 'next/headers';
+
+const slugify = (text: string) => {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-');
+};
+
 export async function POST(request: Request) {
   try {
+    const cookieStore = await cookies();
+    const role = cookieStore.get('admin_role')?.value;
+    if (role === 'viewer') {
+      return NextResponse.json({ error: 'Forbidden: Viewers cannot upload products' }, { status: 403 });
+    }
+
     const { products } = await request.json();
 
     if (!Array.isArray(products) || products.length === 0) {
@@ -28,7 +46,8 @@ export async function POST(request: Request) {
             price, 
             image_url: image_url || '', 
             category: category || 'General', 
-            is_active: is_active ?? true 
+            is_active: is_active ?? true,
+            slug: slugify(name)
           }
         ])
         .select()

@@ -2,17 +2,23 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Package, BarChart3, Mail } from 'lucide-react';
+import { LayoutDashboard, Package, BarChart3, Mail, Users } from 'lucide-react';
 
-export default function SidebarNav() {
+export default function SidebarNav({ role = 'viewer' }: { role?: string }) {
   const pathname = usePathname();
 
   const navItems = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/admin/products', label: 'Products', icon: Package },
     { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
-    { href: '/admin/settings', label: 'Campaigns', icon: Mail },
   ];
+
+  if (role === 'super_admin') {
+    navItems.push(
+      { href: '/admin/settings', label: 'Campaigns', icon: Mail },
+      { href: '/admin/team', label: 'Team', icon: Users }
+    );
+  }
 
   return (
     <nav className="flex-1 px-4 space-y-2 mt-8">

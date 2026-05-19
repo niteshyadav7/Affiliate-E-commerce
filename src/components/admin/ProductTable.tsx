@@ -5,16 +5,24 @@ import { Edit2, Trash2, Link as LinkIcon, Plus, ExternalLink, Upload, X, FileTex
 import Button from '@/components/atoms/Button';
 import ProductForm from './ProductForm';
 
-export default function ProductTable() {
+export default function ProductTable({ role = 'viewer' }: { role?: string }) {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  const copyToClipboard = (slug: string, id: string) => {
+    const url = `${window.location.origin}/r/${slug || id}`;
+    navigator.clipboard.writeText(url);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   const fetchProducts = async () => {
     try {
@@ -80,12 +88,16 @@ export default function ProductTable() {
         <div className="p-6 border-b border-surface-container-low flex justify-between items-center">
           <h2 className="font-display text-xl font-bold text-primary">All Products</h2>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" className="flex items-center gap-2 text-xs" onClick={() => setIsBulkUploadOpen(true)}>
-              <Upload className="w-4 h-4" /> Bulk Upload
-            </Button>
-            <Button size="sm" className="flex items-center gap-2 text-xs" onClick={() => { setEditingProduct(null); setIsEditing(true); }}>
-              <Plus className="w-4 h-4" /> Add Product
-            </Button>
+            {role !== 'viewer' && (
+              <>
+                <Button size="sm" variant="outline" className="flex items-center gap-2 text-xs" onClick={() => setIsBulkUploadOpen(true)}>
+                  <Upload className="w-4 h-4" /> Bulk Upload
+                </Button>
+                <Button size="sm" className="flex items-center gap-2 text-xs" onClick={() => { setEditingProduct(null); setIsEditing(true); }}>
+                  <Plus className="w-4 h-4" /> Add Product
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
@@ -98,7 +110,7 @@ export default function ProductTable() {
                 <th className="px-6 py-4 font-bold text-primary">Price</th>
                 <th className="px-6 py-4 font-bold text-primary">Links & Clicks</th>
                 <th className="px-6 py-4 font-bold text-primary">Status</th>
-                <th className="px-6 py-4 font-bold text-primary text-right">Actions</th>
+                {role !== 'viewer' && <th className="px-6 py-4 font-bold text-primary text-right">Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -125,38 +137,54 @@ export default function ProductTable() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col gap-1 text-xs">
-                      <span className="flex items-center gap-1 text-primary font-bold">
-                        <LinkIcon className="w-3 h-3" /> {product.product_links?.length || 0} active links
+                      <span className="flex items-center gap-1.5 text-primary font-bold">
+                        <LinkIcon className="w-3.5 h-3.5" /> {product.product_links?.length || 0} active links
                       </span>
-                      <span className="opacity-70">
+                      <div className="flex items-center gap-1.5 mt-1 bg-surface py-1 px-2 rounded-lg border border-outline/10 w-fit">
+                        <span className="font-mono text-[10px] text-primary opacity-80 select-all">
+                          /r/{product.slug || 'no-slug'}
+                        </span>
+                        <button
+                          onClick={() => copyToClipboard(product.slug, product.id)}
+                          className="text-[10px] text-primary hover:underline font-bold cursor-pointer transition-all whitespace-nowrap"
+                        >
+                          {copiedId === product.id ? 'Copied!' : 'Copy'}
+                        </button>
+                      </div>
+                      <span className="opacity-70 text-[10px] mt-0.5">
                         Total Clicks: {product.product_counters?.[0]?.total_clicks || 0}
                       </span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <button 
+                      disabled={role === 'viewer'}
                       onClick={() => toggleStatus(product)}
-                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${product.is_active ? 'bg-green-500' : 'bg-gray-300'}`}
+                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${role === 'viewer' ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} ${product.is_active ? 'bg-green-500' : 'bg-gray-300'}`}
                     >
                       <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${product.is_active ? 'translate-x-5' : 'translate-x-1'}`} />
                     </button>
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button 
-                        onClick={() => { setEditingProduct(product); setIsEditing(true); }}
-                        className="p-2 text-on-secondary-container hover:text-primary bg-surface rounded-lg hover:bg-surface-container-low transition-colors"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(product.id)}
-                        className="p-2 text-red-400 hover:text-red-500 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
+                  {role !== 'viewer' && (
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button 
+                          onClick={() => { setEditingProduct(product); setIsEditing(true); }}
+                          className="p-2 text-on-secondary-container hover:text-primary bg-surface rounded-lg hover:bg-surface-container-low transition-colors"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        {role === 'super_admin' && (
+                          <button 
+                            onClick={() => handleDelete(product.id)}
+                            className="p-2 text-red-400 hover:text-red-500 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

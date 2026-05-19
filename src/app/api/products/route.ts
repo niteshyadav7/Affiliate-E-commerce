@@ -18,15 +18,23 @@ export async function GET() {
   return NextResponse.json(data);
 }
 
+import { cookies } from 'next/headers';
+
 export async function POST(request: Request) {
   try {
+    const cookieStore = await cookies();
+    const role = cookieStore.get('admin_role')?.value;
+    if (role === 'viewer') {
+      return NextResponse.json({ error: 'Forbidden: Viewers cannot create products' }, { status: 403 });
+    }
+
     const body = await request.json();
-    const { name, description, price, image_url, category, is_active } = body;
+    const { name, description, price, image_url, category, is_active, slug } = body;
 
     const { data, error } = await supabaseServer
       .from('products')
       .insert([
-        { name, description, price, image_url, category, is_active }
+        { name, description, price, image_url, category, is_active, slug }
       ])
       .select()
       .single();

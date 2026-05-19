@@ -4,7 +4,8 @@ import ProductTable from '@/components/admin/ProductTable';
 
 export default async function AdminPage() {
   const cookieStore = await cookies();
-  const isAuthenticated = cookieStore.get('admin_token')?.value === 'authenticated';
+  const isAuthenticated = !!cookieStore.get('admin_token')?.value;
+  const role = cookieStore.get('admin_role')?.value || 'viewer';
 
   if (!isAuthenticated) {
     return <LoginForm />;
@@ -21,7 +22,7 @@ export default async function AdminPage() {
         In a real app, you might have multiple tabs/pages for products, analytics, etc.
         For this prototype, the dashboard displays the ProductTable.
       */}
-      <ProductTable />
+      <ProductTable role={role} />
     </div>
   );
 }

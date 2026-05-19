@@ -47,12 +47,36 @@ export async function GET() {
 }
 
 // DELETE: Remove a subscriber (for Admin Panel)
+import { cookies } from 'next/headers';
+
 export async function DELETE(request: Request) {
   try {
-    const { email } = await request.json();
+    const cookieStore = await cookies();
+    const role = cookieStore.get('admin_role')?.value;
+    if (role !== 'super_admin') {
+      return NextResponse.json({ error: 'Forbidden: Only Super Admins can remove subscribers' }, { status: 403 });
+    }
+
+    // Try reading ID from query parameters
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (id) {
+      const { error } = await supabaseServer
+        .from('newsletter_subscribers')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return NextResponse.json({ success: true, message: 'Subscriber removed successfully!' });
+    }
+
+    // Fallback: Read email from body
+    const body = await request.json().catch(() => ({}));
+    const { email } = body;
 
     if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+      return NextResponse.json({ error: 'ID or Email is required' }, { status: 400 });
     }
 
     const { error } = await supabaseServer

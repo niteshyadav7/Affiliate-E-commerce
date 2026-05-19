@@ -8,9 +8,27 @@ export async function GET(
   try {
     const { id } = await params;
 
-    // Call the RPC function
+    // Parse device type from User-Agent
+    const ua = request.headers.get('user-agent') || '';
+    let device = 'Desktop';
+    if (/tablet|ipad|playbook|silk/i.test(ua)) {
+      device = 'Tablet';
+    } else if (/mobile|iphone|ipod|android|blackberry|opera mini|iemobile/i.test(ua)) {
+      device = 'Mobile';
+    }
+
+    // Parse country code from Vercel header, fallback to header lookup
+    const country = request.headers.get('x-vercel-ip-country') || 'Unknown';
+    const referrer = request.headers.get('referer') || 'Direct';
+
+    // Call the updated RPC function with metadata parameters
     const { data, error } = await supabaseServer
-      .rpc('get_next_redirect', { p_product_id: id });
+      .rpc('get_next_redirect', { 
+        p_product_id: id,
+        p_country_code: country,
+        p_device_type: device,
+        p_referrer: referrer
+      });
 
     if (error) {
       console.error('RPC Error:', error);
@@ -23,8 +41,6 @@ export async function GET(
 
     const { redirect_url } = data[0];
     
-    // Instead of json, we can actually do a 302 redirect directly. 
-    // This is great because we can just link to /api/redirect/[id] from the client.
     return NextResponse.redirect(redirect_url);
     
   } catch (error: any) {
