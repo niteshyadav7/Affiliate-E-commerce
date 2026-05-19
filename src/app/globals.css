@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+@theme {
+  --color-on-surface: #0a1d2e;
+  --color-surface: #f8f9ff;
+  --color-on-tertiary: #ffffff;
+  --color-on-tertiary-container: #969896;
+  --color-surface-variant: #d2e4fc;
+  --color-background: #f8f9ff;
+  --color-error: #ba1a1a;
+  --color-surface-container-high: #daeaff;
+  --color-accent-lime: #D5F55B;
+  --color-surface-tint: #485e88;
+  --color-on-tertiary-fixed-variant: #454746;
+  --color-surface-bright: #f8f9ff;
+  --color-surface-container-lowest: #ffffff;
+  --color-secondary-fixed-dim: #bdc8d3;
+  --color-on-error: #ffffff;
+  --color-surface-container-low: #eef4ff;
+  --color-on-background: #0a1d2e;
+  --color-on-primary: #ffffff;
+  --color-outline-variant: #c4c6cf;
+  --color-primary-fixed: #d7e2ff;
+  --color-on-secondary: #ffffff;
+  --color-accent-amber: #FCE285;
+  --color-tertiary: #191b1a;
+  --color-tertiary-fixed: #e2e3e1;
+  --color-primary-container: #162f56;
+  --color-on-surface-variant: #44474e;
+  --color-tertiary-container: #2e302f;
+  --color-secondary-fixed: #dae4ef;
+  --color-on-secondary-container: #5a646e;
+  --color-primary-fixed-dim: #b0c7f7;
+  --color-surface-container-highest: #d2e4fc;
+  --color-outline: #74777f;
+  --color-on-secondary-fixed-variant: #3e4851;
+  --color-secondary: #565f69;
+  --color-surface-white: #FFFFFF;
+  --color-surface-container: #e4efff;
+  --color-on-primary-fixed-variant: #30476f;
+  --color-inverse-surface: #213244;
+  --color-on-error-container: #93000a;
+  --color-inverse-primary: #b0c7f7;
+  --color-on-primary-fixed: #001b3f;
+  --color-accent-coral: #FD5E3A;
+  --color-on-primary-container: #8197c5;
+  --color-error-container: #ffdad6;
+  --color-on-secondary-fixed: #131d25;
+  --color-secondary-container: #d7e1ed;
+  --color-tertiary-fixed-dim: #c6c7c5;
+  --color-inverse-on-surface: #e9f1ff;
+  --color-on-tertiary-fixed: #1a1c1b;
+  --color-surface-dim: #cadcf3;
+  --color-primary: #001a3d;
+
+  --font-display: var(--font-display), "Outfit", sans-serif;
+  --font-body: var(--font-body), "Inter", sans-serif;
+  --font-serif: var(--font-serif), "Playfair Display", serif;
+
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-full: 9999px;
+  
+  --spacing-gutter: 24px;
+  --spacing-page-margin-desktop: 80px;
+  --spacing-section-gap: 120px;
+  --spacing-page-margin-mobile: 20px;
+  --spacing-stack-gap: 16px;
+}
+
+@layer utilities {
+  .text-display-lg { font-size: 56px; line-height: 64px; letter-spacing: -0.03em; font-weight: 800; }
+  .text-label-caps { font-size: 12px; line-height: 16px; letter-spacing: 0.1em; font-weight: 600; }
+  .text-display-xl { font-size: 72px; line-height: 80px; letter-spacing: -0.04em; font-weight: 800; }
+  .text-body-lg { font-size: 18px; line-height: 28px; }
+  .text-headline-lg { font-size: 48px; line-height: 56px; letter-spacing: -0.02em; font-weight: 700; }
+  .text-body-sm { font-size: 12px; line-height: 16px; }
+  .text-headline-md { font-size: 24px; line-height: 32px; font-weight: 600; }
+  .text-body-md { font-size: 14px; line-height: 22px; }
+  .text-headline-lg-mobile { font-size: 36px; line-height: 44px; letter-spacing: -0.02em; font-weight: 700; }
+}
+
+@layer base {
+  body {
+    @apply font-body bg-surface text-on-surface antialiased overflow-x-hidden;
+  }
+}
+
+.liquid-mask {
+  clip-path: url(#liquid-shape);
+}
+
+.pebble-mask {
+  clip-path: url(#pebble-shape);
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.rotate-slow {
+  animation: rotate 12s linear infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+.floating-product {
+  animation: float 6s ease-in-out infinite;
+}
+
+.grain-texture::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.03;
+  pointer-events: none;
+  background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuBnMYuFtbyAUlu3ZXJROTz5E3BnduKhMlR71K0j_JR1tccEK9GuAV78b129YLWZPv1MPWOMAjQmcrpdIY5CN-TMBnms-qOX1mrmvYpjq_yES4qQrFiE04JyJfRnlKeR0jTSLsOl75GP9DM7GyOhpKjnBcaiBWqd8KqqCgj-TQ_5Okhb2BsQ8NUBs6trxbcal5Kec7M1FmfY2HvCptmLjmVHBfx_0QkcpgCJKQiGyvtuA4gUiMSebCTXAVzmpA9ZTn3idpVF8bTc94sz);
+}
