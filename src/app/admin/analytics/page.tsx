@@ -24,6 +24,7 @@ export default function AnalyticsPage() {
     productCount: 0,
     subscriberCount: 0,
     totalClicks: 0,
+    recentClicks: 0,
     devices: { Mobile: 0, Tablet: 0, Desktop: 0 },
     topCountries: [],
     recentActivity: []
@@ -112,11 +113,47 @@ export default function AnalyticsPage() {
     Desktop: Math.round(((metrics.devices.Desktop || 0) / totalDeviceClicks) * 100),
   };
 
+  const getTrafficStatus = (clicks: number) => {
+    if (clicks < 15) {
+      return {
+        label: 'Low Load (Excellent)',
+        color: 'text-green-700 bg-green-50 border-green-200',
+        desc: 'System load is low. Free tier database can handle this easily.'
+      };
+    } else if (clicks < 80) {
+      return {
+        label: 'Moderate Traffic',
+        color: 'text-blue-700 bg-blue-50 border-blue-200',
+        desc: 'Normal campaign traffic. Responsive and healthy.'
+      };
+    } else {
+      return {
+        label: 'High Traffic (Busy)',
+        color: 'text-orange-700 bg-orange-50 border-orange-200',
+        desc: 'Heavy click rates. Monitor active connection metrics.'
+      };
+    }
+  };
+
+  const traffic = getTrafficStatus(metrics.recentClicks || 0);
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div>
-        <h1 className="font-display text-3xl font-bold text-primary">Analytics & Audience</h1>
-        <p className="text-on-secondary-container mt-2">View redirect click streams, device tracking, and subscriber logs.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="font-display text-3xl font-bold text-primary">Analytics & Audience</h1>
+          <p className="text-on-secondary-container mt-2">View redirect click streams, device tracking, and subscriber logs.</p>
+        </div>
+
+        {/* Live Traffic Load Indicator */}
+        <div className={`p-4 rounded-2xl border flex flex-col max-w-xs w-full shadow-sm ${traffic.color}`}>
+          <div className="flex items-center justify-between gap-6">
+            <span className="text-[10px] font-bold uppercase tracking-wider opacity-85">Live Traffic (15m)</span>
+            <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-white/60">{metrics.recentClicks || 0} clicks</span>
+          </div>
+          <span className="text-sm font-bold mt-1.5">{traffic.label}</span>
+          <span className="text-[9px] mt-0.5 opacity-80 leading-normal">{traffic.desc}</span>
+        </div>
       </div>
 
       {loading ? (

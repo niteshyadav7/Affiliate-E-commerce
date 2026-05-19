@@ -26,6 +26,15 @@ export async function GET() {
     
     const totalClicks = (counters || []).reduce((acc, c) => acc + (c.total_clicks || 0), 0);
 
+    // 3.5 Fetch click count in the last 15 minutes for live traffic monitoring
+    const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    const { count: recentClicks, error: recentErr } = await supabaseServer
+      .from('click_events')
+      .select('id', { count: 'exact', head: true })
+      .gte('created_at', fifteenMinsAgo);
+
+    if (recentErr) throw recentErr;
+
     // 4. Fetch the last 500 click events to compute client statistics
     const { data: clickEvents, error: eventErr } = await supabaseServer
       .from('click_events')
@@ -72,6 +81,7 @@ export async function GET() {
       productCount: productCount || 0,
       subscriberCount: subscriberCount || 0,
       totalClicks,
+      recentClicks: recentClicks || 0,
       devices,
       topCountries,
       recentActivity,

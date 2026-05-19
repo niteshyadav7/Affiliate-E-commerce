@@ -17,7 +17,7 @@ interface Subscriber {
   created_at: string;
 }
 
-export default function SettingsPage() {
+export default function CampaignsClient() {
   const [subject, setSubject] = useState('Exclusive Weekly Deals from Shopverse!');
   const [headingMessage, setHeadingMessage] = useState(
     'Hey there! We have curated a list of the hottest trending deals this week. Check out the hand-picked recommendations below and lock in your discounts!'
@@ -61,17 +61,6 @@ export default function SettingsPage() {
   };
 
   useEffect(() => {
-    const getCookie = (name: string) => {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop()?.split(';').shift();
-      return null;
-    };
-    const role = getCookie('admin_role');
-    if (role !== 'super_admin') {
-      window.location.href = '/admin';
-      return;
-    }
     fetchData();
   }, []);
 

@@ -15,7 +15,7 @@ export default function SidebarNav({ role = 'viewer' }: { role?: string }) {
 
   if (role === 'super_admin') {
     navItems.push(
-      { href: '/admin/settings', label: 'Campaigns', icon: Mail },
+      { href: '/admin/campaigns', label: 'Campaigns', icon: Mail },
       { href: '/admin/team', label: 'Team', icon: Users }
     );
   }
