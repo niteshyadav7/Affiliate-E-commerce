@@ -1,228 +1,201 @@
-# E-Commerce Landing Page with Smart Link Rotation
+# Dynamic Product Detail Pages + Admin Management
 
-Build a premium e-commerce landing page where each product has multiple backend affiliate/redirect links. When users click a product's "Buy Now" button, they are distributed across those links in a **round-robin** fashion (User 1 → Link A, User 2 → Link B, User 3 → Link C, User 4 → Link A again...). Includes a full **Admin Panel** for managing products and their link pools.
+## Background
 
-## Core Concept
+Currently, clicking **"BUY NOW"** on a product card immediately triggers the round-robin affiliate redirect (`/api/redirect/[id]`). There is **no product landing/detail page** where users can see full product information before deciding to buy.
 
-```mermaid
-graph LR
-    U1[User 1 clicks] --> P[Product Card]
-    U2[User 2 clicks] --> P
-    U3[User 3 clicks] --> P
-    P --> RR{Round-Robin Engine}
-    RR -->|Click 1| L1[Link A - Amazon]
-    RR -->|Click 2| L2[Link B - Flipkart]
-    RR -->|Click 3| L3[Link C - Meesho]
-    RR -->|Click 4| L1
-```
+The existing `products` table only stores: `name`, `description`, `price`, `image_url`, `category`, `slug`, `is_active`. This is insufficient for a rich product landing page.
+
+### What This Plan Delivers
+1. **New `product_details` table** — stores rich product info (highlights, specs, gallery, ratings, stock, etc.)
+2. **Dynamic product landing page** at `/product/[slug]` — premium UI with image gallery, specifications, affiliate CTA
+3. **Updated seed SQL** — detailed data for all 8 existing products
+4. **Admin panel section** — full CRUD for product details within the existing admin panel
+5. **Updated product cards** — clicking a card navigates to the detail page instead of redirecting immediately
+
+---
 
 ## User Review Required
 
 > [!IMPORTANT]
-> **Technology Choice**: I plan to use **Next.js** (like your previous redirect-concept project) deployed on **Vercel** with **Vercel KV (Redis)** for global state persistence. This ensures the round-robin counter is shared across ALL visitors globally (not per-browser). Is this acceptable, or do you want a simpler static HTML/JS approach with localStorage?
+> **Product card behavior change:** Currently, clicking "BUY NOW" on a product card immediately redirects to an affiliate link. This plan changes it so that clicking the card opens a product detail page, and the affiliate redirect ("BUY NOW") happens from within that detail page. This is the standard e-commerce flow.
 
 > [!IMPORTANT]
-> **Admin Panel Security**: The admin panel will use a simple password-based auth (environment variable `ADMIN_PASSWORD`). For production, you'd want proper authentication. Is a simple password sufficient for now?
+> **The product detail page will still use the existing round-robin redirect** for the "Buy Now" CTA. The `/api/redirect/[id]` endpoint remains unchanged.
 
-> [!WARNING]
-> **Product Images**: I'll use AI-generated product images for the demo. You can replace them with real product images later. Should I generate specific product categories (electronics, fashion, etc.)?
+---
 
 ## Open Questions
 
-1. **Product Categories**: Do you want product categories/filters on the landing page, or just a flat grid of all products?
-2. **Analytics**: Do you want to see click analytics per product (total clicks, clicks per link) in the admin panel?
-3. **Link Weights**: Should all links get equal distribution (strict round-robin), or do you want weighted distribution (e.g., Link A gets 50% traffic, Link B gets 30%, Link C gets 20%)?
-4. **Number of Demo Products**: How many initial demo products should I seed? I'm thinking 8-12 products across categories.
+> [!NOTE]
+> **Gallery images**: The plan adds support for multiple product images. For now, the seed data will reuse the existing single product image as the primary gallery image. You can add more images later via the admin panel.
 
 ---
 
 ## Proposed Changes
 
-### Architecture Overview
+### 1. Database Schema — `product_details` table
 
-```mermaid
-graph TB
-    subgraph "Frontend"
-        LP[Landing Page<br/>Product Grid]
-        AP[Admin Panel<br/>/admin]
-    end
-    
-    subgraph "API Routes"
-        API1[GET /api/products<br/>List all products]
-        API2[POST /api/products<br/>Create product]
-        API3[PUT /api/products/:id<br/>Update product]
-        API4[DELETE /api/products/:id<br/>Delete product]
-        API5[GET /api/redirect/:id<br/>Round-robin redirect]
-        API6[POST /api/auth<br/>Admin login]
-        API7[GET /api/analytics<br/>Click stats]
-    end
-    
-    subgraph "Storage"
-        KV[(Vercel KV / Local JSON<br/>Products + Click Counters)]
-    end
-    
-    LP --> API1
-    LP --> API5
-    AP --> API2
-    AP --> API3
-    AP --> API4
-    AP --> API6
-    AP --> API7
-    API1 --> KV
-    API5 --> KV
+#### [NEW] `product_details_migration.sql`
+
+A new table `product_details` with a 1:1 relationship to `products`:
+
+```sql
+CREATE TABLE IF NOT EXISTS product_details (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  product_id UUID UNIQUE REFERENCES products(id) ON DELETE CASCADE,
+  
+  -- Rich content
+  long_description TEXT DEFAULT '',
+  highlights TEXT[] DEFAULT '{}',          -- Array of bullet-point highlights
+  specifications JSONB DEFAULT '{}',       -- Key-value pairs e.g. {"Weight": "250g", "Battery": "30hrs"}
+  
+  -- Gallery (array of image URLs)
+  gallery_images TEXT[] DEFAULT '{}',
+  
+  -- Social proof
+  rating NUMERIC(2,1) DEFAULT 0.0,         -- e.g. 4.5
+  reviews_count INTEGER DEFAULT 0,
+  
+  -- Stock & shipping
+  stock_status TEXT DEFAULT 'in_stock',     -- 'in_stock', 'low_stock', 'out_of_stock'
+  shipping_info TEXT DEFAULT 'Free shipping on orders over $50',
+  
+  -- SEO
+  meta_title TEXT DEFAULT '',
+  meta_description TEXT DEFAULT '',
+  
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+**Why a separate table?** Keeps the core `products` table lean (it's queried on every homepage load for the grid). Detail data is only fetched when a user visits a specific product page.
+
+---
+
+### 2. Seed Data
+
+#### [NEW] `seed_product_details.sql`
+
+Seed data for all 8 existing products with realistic highlights, specifications, ratings, and gallery images. Example structure:
+
+```sql
+INSERT INTO product_details (product_id, long_description, highlights, specifications, rating, reviews_count, stock_status, shipping_info, gallery_images)
+VALUES (
+  'a1b2c3d4-e5f6-4a5b-8c7d-9e0f1a2b3c4d',  -- Acoustic Pro Max
+  'Experience studio-quality sound with the Acoustic Pro Max...',
+  ARRAY['Active Noise Cancellation', '30-hour battery life', 'Premium memory foam ear cushions', 'Bluetooth 5.3 with multipoint'],
+  '{"Driver Size": "40mm", "Frequency Response": "4Hz - 40kHz", "Battery Life": "30 hours", "Weight": "250g", "Connectivity": "Bluetooth 5.3, 3.5mm AUX", "Noise Cancellation": "Adaptive ANC"}'::jsonb,
+  4.8, 2847, 'in_stock', 'Free express shipping',
+  ARRAY['<existing_image_url>']
+);
+-- ... similar for all 8 products
 ```
 
 ---
 
-### 1. Project Setup
+### 3. Frontend — Product Detail Page
 
-#### [NEW] Next.js App Initialization
-- Initialize Next.js with TypeScript, Tailwind CSS, App Router
-- Install dependencies: `@vercel/kv`, `lucide-react`, `uuid`
-- Configure for Vercel deployment
+#### [NEW] [page.tsx](file:///d:/yash/may/E-commerce/src/app/product/[slug]/page.tsx)
 
----
+A **server component** that:
+- Fetches product + product_details + product_links by slug (falling back to UUID)
+- Renders a premium product landing page
+- Passes data to a client component for interactivity
 
-### 2. Data Layer
+#### [NEW] [ProductDetailClient.tsx](file:///d:/yash/may/E-commerce/src/components/organisms/ProductDetailClient.tsx)
 
-#### [NEW] `src/lib/store.ts` — Product & State Management
-- **Product data model**:
-  ```typescript
-  interface Product {
-    id: string;
-    name: string;
-    description: string;
-    price: string;
-    image: string;
-    category: string;
-    links: { url: string; label: string }[];
-    nextLinkIndex: number;  // round-robin counter
-    totalClicks: number;
-    clicksPerLink: number[];
-    createdAt: string;
-  }
-  ```
-- **Functions**: `getProducts()`, `addProduct()`, `updateProduct()`, `deleteProduct()`, `getNextLink(productId)` (atomic round-robin)
-- **Dual mode**: Vercel KV in production, local JSON file in development
+Client component with:
+- **Image gallery** with thumbnail navigation and zoom-on-hover
+- **Product info section**: name, price, rating stars, reviews count, stock badge
+- **Highlights** as styled bullet points
+- **Specifications table** rendered from JSONB
+- **"Buy Now" CTA** that triggers the existing `/api/redirect/[id]` round-robin
+- **"Where to Buy" section** showing all affiliate links with store labels
+- **Shipping info** badge
+- **Breadcrumb navigation**: Home → Category → Product Name
+- **Related products** grid (same category, excluding current product)
+- Framer Motion entrance animations consistent with existing site design
+- Fully responsive (mobile-first)
 
-#### [NEW] `src/lib/auth.ts` — Simple Admin Auth
-- Password check against `ADMIN_PASSWORD` env variable
-- JWT-like token generation using a simple hash for session persistence
+**Design approach**: Matches the existing Shopverse "Organic Luxury" design system — Outfit/Inter fonts, navy primary, lime/coral accents, glassmorphism, rounded corners, generous whitespace.
 
 ---
 
-### 3. API Routes
+### 4. API Routes
 
-#### [NEW] `src/app/api/products/route.ts`
-- `GET`: Return all products (without sensitive link data for public)
-- `POST`: Create new product (admin only, requires auth token)
+#### [NEW] [route.ts](file:///d:/yash/may/E-commerce/src/app/api/products/[id]/details/route.ts)
 
-#### [NEW] `src/app/api/products/[id]/route.ts`
-- `PUT`: Update product details and links (admin only)
-- `DELETE`: Remove product (admin only)
-
-#### [NEW] `src/app/api/redirect/[id]/route.ts`
-- `GET`: The **core engine** — atomically reads the product's `nextLinkIndex`, gets the corresponding URL, increments the index (wrapping around), and returns a 307 redirect
-- Opens the destination URL directly — zero latency for the user
-
-#### [NEW] `src/app/api/auth/route.ts`
-- `POST`: Validate admin password, return session token
-
-#### [NEW] `src/app/api/analytics/route.ts`
-- `GET`: Return click statistics per product and per link (admin only)
+- `GET` — Fetch product details by product ID
+- `PUT` — Update product details (admin, role-gated)
+- `POST` — Create product details if they don't exist yet (admin, role-gated)
 
 ---
 
-### 4. Landing Page (Public)
+### 5. Admin Panel — Product Details Management
 
-#### [NEW] `src/app/page.tsx` — E-Commerce Landing Page
-- **Hero Section**: Premium gradient hero with tagline and CTA
-- **Product Grid**: Responsive grid (4 cols desktop, 2 cols tablet, 1 col mobile)
-- **Product Cards**: Each card shows:
-  - Product image (AI-generated)
-  - Product name, description, price
-  - "Buy Now" button → calls `/api/redirect/[id]` (opens in `_blank`)
-  - Subtle hover animations, glassmorphism effects
-- **Category Filter**: Optional filter bar at the top
-- **Footer**: Minimal branding
+#### [MODIFY] [ProductForm.tsx](file:///d:/yash/may/E-commerce/src/components/admin/ProductForm.tsx)
 
-#### [NEW] `src/app/globals.css` — Design System
-- Premium color palette (modern e-commerce aesthetic)
-- Custom animations (fade-in, slide-up, pulse)
-- Glassmorphism card styles
-- Responsive typography using Google Fonts (Inter/Outfit)
+Add a new **"Product Details"** collapsible section below the existing "Redirect Destinations" section in the same form. This keeps the workflow unified — when editing a product, you can fill in details in the same place. Fields added:
 
-#### [NEW] `src/app/layout.tsx` — Root Layout
-- SEO meta tags, Google Fonts, favicon
-- Clean HTML structure
+- **Long Description** — rich textarea
+- **Highlights** — dynamic list (add/remove bullet points)
+- **Specifications** — dynamic key-value pair editor (add/remove rows)
+- **Gallery Images** — dynamic list of image URLs (add/remove)
+- **Rating** — number input (0.0–5.0)
+- **Reviews Count** — number input
+- **Stock Status** — dropdown (In Stock / Low Stock / Out of Stock)
+- **Shipping Info** — text input
+- **Meta Title** — text input
+- **Meta Description** — textarea
+
+The form will fetch existing details when editing, and create/update them on save.
 
 ---
 
-### 5. Admin Panel
+### 6. Frontend Updates — Product Card & Grid
 
-#### [NEW] `src/app/admin/page.tsx` — Admin Dashboard
-- **Login Gate**: Password input → validates against API → stores token in sessionStorage
-- **Product Management Table**: 
-  - List all products with name, price, category, total clicks
-  - Edit / Delete buttons per row
-- **Add Product Form**:
-  - Product name, description, price, category, image URL
-  - **Dynamic link list**: Add/remove multiple links with labels (e.g., "Amazon", "Flipkart")
-  - Preview card showing how the product will look
-- **Analytics View**:
-  - Per-product click breakdown
-  - Per-link click distribution (bar chart or table)
-  - Total traffic overview
-- **Bulk Actions**: Reset click counters, export data
+#### [MODIFY] [ProductCard.tsx](file:///d:/yash/may/E-commerce/src/components/molecules/ProductCard.tsx)
+
+- Make the **entire card clickable** → navigates to `/product/[slug]`
+- Keep "BUY NOW" button but change its behavior: it also navigates to the product page (not direct redirect)
+- Add slug to the ProductCard props
+
+#### [MODIFY] [ProductGrid.tsx](file:///d:/yash/may/E-commerce/src/components/organisms/ProductGrid.tsx)
+
+- Pass `slug` from database data to ProductCard
+- Update the `handleBuyNow` to navigate to `/product/[slug]` instead of `/api/redirect/[id]`
+- Use Next.js `router.push` for client-side navigation
 
 ---
 
-### 6. UI Components
+## File Summary
 
-#### [NEW] `src/components/ProductCard.tsx`
-- Reusable product card with image, details, and CTA button
-- Hover effects: scale, shadow elevation, button color shift
-- Loading skeleton state
-
-#### [NEW] `src/components/AdminProductForm.tsx`
-- Form for adding/editing products
-- Dynamic link input rows (add/remove)
-- Form validation
-
-#### [NEW] `src/components/Navbar.tsx`
-- Sticky navigation bar
-- Logo, category links, admin access icon
-
----
-
-### 7. Product Images
-
-I will generate **8 premium product images** using the image generation tool:
-1. Wireless Headphones
-2. Smart Watch
-3. Running Shoes
-4. Laptop
-5. Backpack
-6. Sunglasses
-7. Coffee Maker
-8. Phone Case
+| Action | File | Purpose |
+|--------|------|---------|
+| **NEW** | `product_details_migration.sql` | DB migration for `product_details` table |
+| **NEW** | `seed_product_details.sql` | Seed data for all 8 products |
+| **NEW** | `src/app/product/[slug]/page.tsx` | Product detail page (server component) |
+| **NEW** | `src/components/organisms/ProductDetailClient.tsx` | Product detail UI (client component) |
+| **NEW** | `src/app/api/products/[id]/details/route.ts` | API for product details CRUD |
+| **MODIFY** | `src/components/admin/ProductForm.tsx` | Add details section to admin form |
+| **MODIFY** | `src/components/molecules/ProductCard.tsx` | Link cards to detail page |
+| **MODIFY** | `src/components/organisms/ProductGrid.tsx` | Pass slug, update navigation |
 
 ---
 
 ## Verification Plan
 
 ### Automated Tests
-1. **Build Check**: `npm run build` — ensure zero errors
-2. **Local Dev Test**: `npm run dev` — verify landing page renders correctly
-3. **API Tests**: 
-   - Hit `/api/products` to confirm product listing
-   - Hit `/api/redirect/[id]` multiple times to verify round-robin rotation
-4. **Browser Test**: Use browser subagent to:
-   - Navigate the landing page
-   - Click product "Buy Now" buttons and verify redirect rotation
-   - Log into admin panel and add/edit a product
+- `npm run build` — ensure no TypeScript/build errors
+- Visit `/product/acoustic-pro-max` — verify the page renders with all sections
+- Click "BUY NOW" on the detail page → verify redirect triggers via `/api/redirect/[id]`
+- Test admin panel → edit a product → verify details section appears and saves correctly
+- Test with non-existent slug → verify 404 handling
 
 ### Manual Verification
-- Visual inspection of the landing page design via browser screenshots
-- Verify admin panel CRUD operations work end-to-end
-- Confirm round-robin distribution is correct across multiple clicks
+- Browse homepage → click product card → verify navigation to detail page
+- Verify responsive layout on mobile viewport
+- Verify admin form saves and loads product details correctly
+- Run seed SQL in Supabase → verify data populates

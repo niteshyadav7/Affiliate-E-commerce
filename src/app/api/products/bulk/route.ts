@@ -81,9 +81,39 @@ export async function POST(request: Request) {
           if (linksError) throw linksError;
         }
 
+        // 4. Insert product details if provided
+        const { details } = p;
+        if (details && Object.keys(details).length > 0) {
+          const { error: detailsError } = await supabaseServer
+            .from('product_details')
+            .insert([
+              {
+                product_id: productData.id,
+                long_description: details.long_description || '',
+                highlights: details.highlights || [],
+                specifications: details.specifications || {},
+                gallery_images: details.gallery_images || [],
+                rating: details.rating ? parseFloat(details.rating) : 0,
+                reviews_count: details.reviews_count ? parseInt(details.reviews_count, 10) : 0,
+                stock_status: details.stock_status || 'in_stock',
+                shipping_info: details.shipping_info || 'Free shipping on orders over $50',
+                meta_title: details.meta_title || '',
+                meta_description: details.meta_description || ''
+              }
+            ]);
+            
+          if (detailsError) {
+             console.error('Failed to insert product details', detailsError);
+             // We won't throw here to avoid failing the whole product creation if just details fail,
+             // or we can throw depending on strictness. Let's throw for data consistency.
+             throw detailsError;
+          }
+        }
+
         insertedProducts.push({
           ...productData,
-          product_links: links || []
+          product_links: links || [],
+          product_details: details || {}
         });
       }
     }

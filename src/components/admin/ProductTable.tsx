@@ -203,7 +203,11 @@ function BulkUploadModal({ isOpen, onClose, onUploadComplete }: { isOpen: boolea
   const [success, setSuccess] = useState(false);
 
   const downloadSampleCSV = () => {
-    const headers = ['Name', 'Category', 'Price', 'Image URL', 'Description', 'Redirect URLs'];
+    const headers = [
+      'Name', 'Category', 'Price', 'Image URL', 'Description', 'Redirect URLs',
+      'Long Description', 'Highlights', 'Specifications', 'Gallery Images', 
+      'Rating', 'Reviews Count', 'Stock Status', 'Shipping Info', 'Meta Title', 'Meta Description'
+    ];
     const sampleRows = [
       [
         'Acoustic Pro Max',
@@ -211,7 +215,17 @@ function BulkUploadModal({ isOpen, onClose, onUploadComplete }: { isOpen: boolea
         '$299.00',
         'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500',
         'Modern noise-cancelling headphones in space grey.',
-        'Amazon|https://amazon.com/dp/B09XS7JWHH;BestBuy|https://bestbuy.com/site/headphones'
+        'Amazon|https://amazon.com/dp/B09XS7JWHH;BestBuy|https://bestbuy.com/site/headphones',
+        'Immerse yourself in high-fidelity audio with our state-of-the-art noise cancellation technology.',
+        'Active Noise Cancellation|Up to 30hrs battery|Spatial Audio|USB-C Charging',
+        '{"Weight": "250g", "Bluetooth": "5.3"}',
+        'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500|https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=500',
+        '4.8',
+        '1245',
+        'in_stock',
+        'Free expedited shipping',
+        'Acoustic Pro Max Headphones | Shopverse',
+        'Buy the new Acoustic Pro Max with active noise cancellation.'
       ],
       [
         'Velocity Run V2',
@@ -219,7 +233,17 @@ function BulkUploadModal({ isOpen, onClose, onUploadComplete }: { isOpen: boolea
         '$120.00',
         'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500',
         'Luxury performance running shoes.',
-        'Nike Store|https://nike.com;https://footlocker.com'
+        'Nike Store|https://nike.com;https://footlocker.com',
+        'Experience ultimate comfort and speed with our latest performance running shoes.',
+        'Breathable mesh|Zoom air cushioning|Durable rubber outsole',
+        '{"Material": "Mesh", "Drop": "10mm"}',
+        '',
+        '4.5',
+        '320',
+        'low_stock',
+        'Ships within 24 hours',
+        '',
+        ''
       ]
     ];
     
@@ -269,6 +293,18 @@ function BulkUploadModal({ isOpen, onClose, onUploadComplete }: { isOpen: boolea
         const imageUrlIndex = headers.indexOf('image url');
         const descriptionIndex = headers.indexOf('description');
         const redirectUrlsIndex = headers.indexOf('redirect urls');
+        
+        // Optional details indices
+        const longDescIndex = headers.indexOf('long description');
+        const highlightsIndex = headers.indexOf('highlights');
+        const specsIndex = headers.indexOf('specifications');
+        const galleryIndex = headers.indexOf('gallery images');
+        const ratingIndex = headers.indexOf('rating');
+        const reviewsIndex = headers.indexOf('reviews count');
+        const stockIndex = headers.indexOf('stock status');
+        const shippingIndex = headers.indexOf('shipping info');
+        const metaTitleIndex = headers.indexOf('meta title');
+        const metaDescIndex = headers.indexOf('meta description');
 
         if (nameIndex === -1 || priceIndex === -1) {
           setErrors(['CSV must contain at least "Name" and "Price" columns.']);
@@ -315,13 +351,56 @@ function BulkUploadModal({ isOpen, onClose, onUploadComplete }: { isOpen: boolea
             });
           }
 
+          // Parse details
+          const details: any = {};
+          if (longDescIndex > -1) details.long_description = row[longDescIndex]?.trim();
+          
+          if (highlightsIndex > -1) {
+             const h = row[highlightsIndex]?.trim();
+             if (h) details.highlights = h.split('|').map(item => item.trim()).filter(Boolean);
+          }
+          
+          if (specsIndex > -1) {
+             const s = row[specsIndex]?.trim();
+             if (s) {
+                 try {
+                     details.specifications = JSON.parse(s);
+                 } catch (e) {
+                     // try to parse as Key:Value|Key:Value if JSON fails
+                     const specs: any = {};
+                     s.split('|').forEach(pair => {
+                         const parts = pair.split(':');
+                         if (parts.length >= 2) {
+                             const key = parts[0].trim();
+                             const val = parts.slice(1).join(':').trim();
+                             if (key) specs[key] = val;
+                         }
+                     });
+                     if (Object.keys(specs).length > 0) details.specifications = specs;
+                 }
+             }
+          }
+          
+          if (galleryIndex > -1) {
+             const g = row[galleryIndex]?.trim();
+             if (g) details.gallery_images = g.split('|').map(item => item.trim()).filter(Boolean);
+          }
+          
+          if (ratingIndex > -1) details.rating = row[ratingIndex]?.trim();
+          if (reviewsIndex > -1) details.reviews_count = row[reviewsIndex]?.trim();
+          if (stockIndex > -1) details.stock_status = row[stockIndex]?.trim() || 'in_stock';
+          if (shippingIndex > -1) details.shipping_info = row[shippingIndex]?.trim();
+          if (metaTitleIndex > -1) details.meta_title = row[metaTitleIndex]?.trim();
+          if (metaDescIndex > -1) details.meta_description = row[metaDescIndex]?.trim();
+
           products.push({
             name,
             category,
             price,
             image_url,
             description,
-            links
+            links,
+            details
           });
         }
 
