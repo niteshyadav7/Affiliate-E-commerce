@@ -123,3 +123,21 @@
   pointer-events: none;
   background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuBnMYuFtbyAUlu3ZXJROTz5E3BnduKhMlR71K0j_JR1tccEK9GuAV78b129YLWZPv1MPWOMAjQmcrpdIY5CN-TMBnms-qOX1mrmvYpjq_yES4qQrFiE04JyJfRnlKeR0jTSLsOl75GP9DM7GyOhpKjnBcaiBWqd8KqqCgj-TQ_5Okhb2BsQ8NUBs6trxbcal5Kec7M1FmfY2HvCptmLjmVHBfx_0QkcpgCJKQiGyvtuA4gUiMSebCTXAVzmpA9ZTn3idpVF8bTc94sz);
 }
+
+/* Shimmer skeleton loading animation */
+@keyframes shimmer {
+  0% { background-position: -700px 0; }
+  100% { background-position: 700px 0; }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-container-low) 0%,
+    var(--color-surface-container-highest) 20%,
+    var(--color-surface-container) 40%,
+    var(--color-surface-container-low) 60%
+  );
+  background-size: 1400px 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}

@@ -16,10 +16,19 @@ const PRODUCTS = [
   { id: 'b8c9d0e1-f2a3-4b5c-8d4e-6f7a8b9c0d1e', name: "Shield Case Ultra", slug: "shield-case-ultra", price: 35.00, category: "GADGETS", image: "https://lh3.googleusercontent.com/aida-public/AB6AXuD5LF-RgRraOL3mWitI-IrYrA80I1qh3hPuJG3UiFcM2kdgjjWE37I0DoDjz2FEEY7Q7g5RVfu4l1-bJyOkJd4F9Q7NJ8Fi4QfvieP-aYdR4jKhZD56LcM_QgemofEbcxNn15Czbzw31isyPNPiKLjrOpqL0hxqbZZxequpsxZuSAfKCoXLfO-C4qXHdNMd6H0-1PcO9UUam5jhzAliq6qNWJLJj2eBuZlLrpKkUTrw0vuNDUsU9A7s7lgOfmNGzhsoUCfcb-exaj0h" }
 ];
 
-export default function ProductGrid() {
-  const [products, setProducts] = useState<any[]>([]);
+// Client-side cache to enable instant loads during session navigation (SWR-like behavior)
+let cachedProducts: any[] | null = null;
+
+interface ProductGridProps {
+  initialProducts?: any[];
+}
+
+export default function ProductGrid({ initialProducts }: ProductGridProps) {
+  const [products, setProducts] = useState<any[]>(
+    cachedProducts || (initialProducts && initialProducts.length > 0 ? initialProducts : [])
+  );
   const [activeCategory, setActiveCategory] = useState('ALL');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!cachedProducts && !(initialProducts && initialProducts.length > 0));
 
   useEffect(() => {
     async function loadProducts() {
@@ -31,8 +40,9 @@ export default function ProductGrid() {
 
         if (error) throw error;
 
+        let mapped: any[] = [];
         if (data && data.length > 0) {
-          const mapped = data.map(p => ({
+          mapped = data.map(p => ({
             id: p.id,
             slug: p.slug,
             name: p.name,
@@ -41,16 +51,16 @@ export default function ProductGrid() {
             tag: p.category ? p.category.toUpperCase() : 'NEW ARRIVAL',
             image: p.image_url
           }));
-          setProducts(mapped);
         } else {
           // Use fallback products if DB is empty
-          const fallbackMapped = PRODUCTS.map(p => ({
+          mapped = PRODUCTS.map(p => ({
             ...p,
             category: p.category.toUpperCase(),
             tag: p.tag?.toUpperCase()
           }));
-          setProducts(fallbackMapped);
         }
+        setProducts(mapped);
+        cachedProducts = mapped;
       } catch (err) {
         console.warn('Could not load products from database, using fallback data:', err);
         const fallbackMapped = PRODUCTS.map(p => ({
@@ -59,6 +69,7 @@ export default function ProductGrid() {
           tag: p.tag?.toUpperCase()
         }));
         setProducts(fallbackMapped);
+        cachedProducts = fallbackMapped;
       } finally {
         setLoading(false);
       }
@@ -83,35 +94,84 @@ export default function ProductGrid() {
                 <span className="absolute -bottom-1 left-0 w-full h-2 bg-accent-lime -z-10"></span>
               </span>
             </h2>
-            <div className="flex flex-wrap gap-2">
-              {categories.map(cat => (
-                <button 
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`px-6 py-2 rounded-full font-body text-[10px] font-bold transition-all cursor-pointer ${
-                    activeCategory === cat 
-                      ? 'bg-primary text-white' 
-                      : 'bg-surface-container-low text-on-secondary-container hover:bg-primary/10'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
+            
+            {/* Category filter pills — show skeletons while loading */}
+            {loading ? (
+              <div className="flex flex-wrap gap-2">
+                {[80, 110, 72, 88, 96, 104, 68].map((w, i) => (
+                  <div
+                    key={i}
+                    className="shimmer rounded-full h-[32px]"
+                    style={{ width: w, animationDelay: `${i * 0.08}s` }}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {categories.map(cat => (
+                  <button 
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`px-6 py-2 rounded-full font-body text-[10px] font-bold transition-all cursor-pointer ${
+                      activeCategory === cat 
+                        ? 'bg-primary text-white' 
+                        : 'bg-surface-container-low text-on-secondary-container hover:bg-primary/10'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
+        {/* Product grid — shimmer skeletons or real cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
-          <AnimatePresence>
-            {filteredProducts.map((product) => (
-              <ProductCard 
-                key={product.id} 
-                {...product} 
-              />
-            ))}
-          </AnimatePresence>
+          {loading ? (
+            <>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-2xl p-4 shadow-sm border border-surface-container h-full flex flex-col justify-between"
+                  style={{ animationDelay: `${i * 0.07}s` }}
+                >
+                  {/* Image skeleton */}
+                  <div>
+                    <div className="relative aspect-square rounded-xl mb-4 overflow-hidden">
+                      <div className="shimmer w-full h-full" style={{ animationDelay: `${i * 0.1}s` }} />
+                      {/* Fake tag badge */}
+                      <div
+                        className="shimmer absolute top-3 left-3 rounded-full h-[20px]"
+                        style={{ width: 72, animationDelay: `${i * 0.12}s` }}
+                      />
+                    </div>
+                    {/* Title skeleton — two lines */}
+                    <div className="space-y-2 mb-2 min-h-[44px] flex flex-col justify-center">
+                      <div className="shimmer rounded-md h-[14px] w-[85%]" style={{ animationDelay: `${i * 0.09}s` }} />
+                      <div className="shimmer rounded-md h-[14px] w-[55%]" style={{ animationDelay: `${i * 0.11}s` }} />
+                    </div>
+                    {/* Price skeleton */}
+                    <div className="shimmer rounded-md h-[12px] w-[40%] mb-3" style={{ animationDelay: `${i * 0.13}s` }} />
+                  </div>
+                  {/* Button skeleton */}
+                  <div className="shimmer rounded-full h-[36px] w-full" style={{ animationDelay: `${i * 0.14}s` }} />
+                </div>
+              ))}
+            </>
+          ) : (
+            <AnimatePresence>
+              {filteredProducts.map((product) => (
+                <ProductCard 
+                  key={product.id} 
+                  {...product} 
+                />
+              ))}
+            </AnimatePresence>
+          )}
         </div>
       </section>
     </div>
   );
 }
+

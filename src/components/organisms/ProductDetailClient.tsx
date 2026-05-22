@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  ChevronRight, 
-  Star, 
-  CheckCircle2, 
-  Truck, 
-  ShieldCheck, 
-  Clock, 
+import {
+  ChevronRight,
+  Star,
+  CheckCircle2,
+  Truck,
+  ShieldCheck,
+  Clock,
   ArrowLeft,
   ExternalLink,
   ShoppingBag,
@@ -19,6 +19,7 @@ import Button from '../atoms/Button';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import Masks from '../Masks';
+import { getDirectGoogleDriveLink } from '@/lib/utils';
 
 interface ProductLinkType {
   id: string;
@@ -65,16 +66,22 @@ interface ProductDetailClientProps {
 export default function ProductDetailClient({ product, relatedProducts }: ProductDetailClientProps) {
   const details = product.product_details;
   const links = product.product_links || [];
-  
+
   // Setup images list (primary image + gallery images)
   const allImages = [
     product.image_url,
     ...(details?.gallery_images || [])
-  ].filter(Boolean);
+  ].filter(Boolean).map(url => getDirectGoogleDriveLink(url));
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<'description' | 'specifications'>('description');
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+
+  // Format underscores to spaces for elegant visual presentation
+  const formattedName = product.name ? product.name.replace(/_/g, ' ') : '';
+  const currentImageUrl = allImages[activeImageIndex];
+  const hasImageError = !currentImageUrl || imageErrors[currentImageUrl];
 
   // Formatting helper for prices
   const displayPrice = product.price;
@@ -102,21 +109,11 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
   return (
     <div className="min-h-screen bg-surface">
       <Masks />
-      
-      {/* Promo Bar */}
-      <div className="bg-accent-coral h-[40px] w-full flex items-center justify-center text-white font-body text-[12px] md:text-sm px-4 z-[60] relative">
-        <div className="flex items-center gap-4">
-          <span className="font-bold uppercase tracking-wide text-center">
-            Limited Time Offer: Get 20% off on all Electronics! Use code: 
-            <span className="bg-white/20 px-2 py-0.5 rounded mx-2">SHOP20</span>
-          </span>
-        </div>
-      </div>
 
       <Navbar />
 
-      <main className="pt-[140px] pb-section-gap px-page-margin-mobile md:px-page-margin-desktop max-w-7xl mx-auto relative z-20">
-        
+      <main className="pt-[130px] pb-section-gap px-page-margin-mobile md:px-page-margin-desktop max-w-7xl mx-auto relative z-20">
+
         {/* Back navigation & Breadcrumbs */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8 text-body-sm text-on-secondary-container">
           <div className="flex items-center gap-2">
@@ -124,35 +121,54 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
               <ArrowLeft className="w-4 h-4" /> Back to Store
             </Link>
           </div>
-          <div className="flex items-center gap-2 font-body">
-            <Link href="/" className="hover:text-primary transition-colors">Home</Link>
-            <ChevronRight className="w-3.5 h-3.5 opacity-60" />
-            <span className="capitalize">{product.category.toLowerCase()}</span>
-            <ChevronRight className="w-3.5 h-3.5 opacity-60" />
-            <span className="text-primary font-bold">{product.name}</span>
+          <div className="flex items-center gap-2 font-body max-w-full overflow-hidden">
+            <Link href="/" className="hover:text-primary transition-colors shrink-0">Home</Link>
+            <ChevronRight className="w-3.5 h-3.5 opacity-60 shrink-0" />
+            <span className="capitalize shrink-0">{product.category.toLowerCase()}</span>
+            <ChevronRight className="w-3.5 h-3.5 opacity-60 shrink-0" />
+            <span className="text-primary font-bold break-words line-clamp-1">{formattedName}</span>
           </div>
         </div>
 
         {/* Product Details Section */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 bg-white rounded-3xl p-6 md:p-10 border border-surface-container shadow-sm mb-16 relative overflow-hidden grain-texture">
-          
+
           {/* Left Column: Image Gallery */}
           <div className="lg:col-span-6 flex flex-col gap-4">
-            <div className="relative aspect-square rounded-2xl bg-surface-container-low overflow-hidden border border-surface-container group">
-              <motion.img
-                key={activeImageIndex}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3 }}
-                src={allImages[activeImageIndex]}
-                alt={`${product.name} gallery image`}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute top-4 right-4 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-bold text-primary border border-surface-white/20 flex items-center gap-1">
+            <div className="relative aspect-square rounded-2xl bg-surface-container-low overflow-hidden border border-surface-container group flex items-center justify-center">
+              {hasImageError ? (
+                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-surface-container-low to-surface-container/60 p-8 text-center">
+                  <div className="w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center mb-4 border border-primary/10">
+                    <ShoppingBag className="w-8 h-8 text-primary/30 animate-pulse" />
+                  </div>
+                  <p className="font-display text-body-lg font-bold text-primary mb-1">
+                    Image Not Available
+                  </p>
+                  <p className="font-body text-body-sm text-secondary max-w-[240px]">
+                    We are uploading a gorgeous showcase for this product soon.
+                  </p>
+                </div>
+              ) : (
+                <motion.img
+                  key={activeImageIndex}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                  src={currentImageUrl}
+                  alt={`${formattedName} gallery image`}
+                  onError={() => {
+                    if (currentImageUrl) {
+                      setImageErrors(prev => ({ ...prev, [currentImageUrl]: true }));
+                    }
+                  }}
+                  className="w-full h-full object-contain object-top bg-white group-hover:scale-105 transition-transform duration-500"
+                />
+              )}
+              <div className="absolute top-4 right-4 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-bold text-primary border border-surface-white/20 flex items-center gap-1 z-10">
                 <Sparkles className="w-3.5 h-3.5 text-accent-coral" /> Shopverse Verified
               </div>
             </div>
-            
+
             {/* Gallery Thumbnails */}
             {allImages.length > 1 && (
               <div className="flex gap-3 overflow-x-auto py-2">
@@ -160,11 +176,10 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
                   <button
                     key={idx}
                     onClick={() => setActiveImageIndex(idx)}
-                    className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 cursor-pointer transition-all flex-shrink-0 ${
-                      activeImageIndex === idx ? 'border-primary shadow-md' : 'border-surface-container hover:border-primary/50'
-                    }`}
+                    className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 cursor-pointer transition-all flex-shrink-0 ${activeImageIndex === idx ? 'border-primary shadow-md' : 'border-surface-container hover:border-primary/50'
+                      }`}
                   >
-                    <img src={img} alt="thumbnail" className="w-full h-full object-cover" />
+                    <img src={img} alt="thumbnail" className="w-full h-full object-contain object-top bg-white" />
                   </button>
                 ))}
               </div>
@@ -174,7 +189,7 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
           {/* Right Column: Information & Actions */}
           <div className="lg:col-span-6 flex flex-col justify-between">
             <div className="space-y-6">
-              
+
               {/* Badges & Category */}
               <div className="flex flex-wrap gap-2 items-center">
                 <span className={`px-3 py-1 rounded-full font-body text-[10px] font-bold uppercase tracking-wider ${stockInfo.className}`}>
@@ -186,8 +201,8 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
               </div>
 
               {/* Product Title */}
-              <h1 className="font-display text-[32px] md:text-[42px] leading-tight text-primary font-bold">
-                {product.name}
+              <h1 className="font-display text-[32px] md:text-[42px] leading-tight text-primary font-bold break-words">
+                {formattedName}
               </h1>
 
               {/* Price & Rating */}
@@ -195,18 +210,17 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
                 <div className="text-display-lg text-primary font-display">
                   {displayPrice}
                 </div>
-                
+
                 {details && (
                   <div className="flex items-center gap-3">
                     <div className="flex items-center text-accent-amber">
                       {[...Array(5)].map((_, i) => (
-                        <Star 
-                          key={i} 
-                          className={`w-5 h-5 ${
-                            i < Math.floor(details.rating) 
-                              ? 'fill-current' 
-                              : 'opacity-30'
-                          }`} 
+                        <Star
+                          key={i}
+                          className={`w-5 h-5 ${i < Math.floor(details.rating)
+                            ? 'fill-current'
+                            : 'opacity-30'
+                            }`}
                         />
                       ))}
                     </div>
@@ -243,12 +257,12 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
 
             {/* CTAs and Purchases options */}
             <div className="mt-8 pt-6 border-t border-surface-container space-y-6">
-              
+
               {/* Primary Redirect BUY NOW */}
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button 
-                  variant="primary" 
-                  size="lg" 
+                <Button
+                  variant="primary"
+                  size="lg"
                   className="flex-1 flex items-center justify-center gap-2 group text-white font-extrabold cursor-pointer"
                   onClick={handleBuyNow}
                   disabled={details?.stock_status === 'out_of_stock'}
@@ -257,131 +271,20 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
                   {details?.stock_status === 'out_of_stock' ? 'OUT OF STOCK' : 'BUY NOW'}
                 </Button>
               </div>
-
-              {/* Where to Buy (Affiliate aggregator links) */}
-              {links.length > 0 && (
-                <div className="bg-surface-container-low rounded-2xl p-4 border border-surface-container">
-                  <div className="text-body-sm font-bold text-primary mb-3 font-display uppercase tracking-wider flex items-center gap-1.5">
-                    Compare Alternate Retailers
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {links.map((link) => (
-                      <a
-                        key={link.id}
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-between p-3 rounded-xl bg-white hover:bg-primary hover:text-white border border-surface-container text-primary transition-all group font-body text-body-sm font-semibold shadow-sm"
-                      >
-                        <span className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-accent-lime group-hover:bg-white transition-colors"></span>
-                          {link.label}
-                        </span>
-                        <ExternalLink className="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity" />
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Delivery and Trust Badges */}
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div className="flex flex-col items-center gap-1.5">
-                  <Truck className="w-5 h-5 text-primary" />
-                  <span className="text-[10px] font-bold text-primary font-display uppercase tracking-wider">Fast Shipping</span>
-                  <span className="text-[9px] text-on-secondary-container font-body leading-tight">
-                    {details?.shipping_info || 'Free standard shipping'}
-                  </span>
-                </div>
-                <div className="flex flex-col items-center gap-1.5">
-                  <ShieldCheck className="w-5 h-5 text-primary" />
-                  <span className="text-[10px] font-bold text-primary font-display uppercase tracking-wider">Buyer Protection</span>
-                  <span className="text-[9px] text-on-secondary-container font-body leading-tight">Secure checkout verified</span>
-                </div>
-                <div className="flex flex-col items-center gap-1.5">
-                  <Clock className="w-5 h-5 text-primary" />
-                  <span className="text-[10px] font-bold text-primary font-display uppercase tracking-wider">Flexible Returns</span>
-                  <span className="text-[9px] text-on-secondary-container font-body leading-tight">30-day money back guarantee</span>
-                </div>
-              </div>
             </div>
 
           </div>
         </div>
 
-        {/* Dynamic Tabs: Detailed Description / Specs */}
-        {details && (
+        {/* Product Description Section */}
+        {(details?.long_description || product.description) && (
           <div className="bg-white rounded-3xl border border-surface-container shadow-sm p-6 md:p-10 mb-16">
-            <div className="flex border-b border-surface-container mb-8">
-              <button
-                onClick={() => setActiveTab('description')}
-                className={`pb-4 px-2 font-display text-body-md font-bold uppercase tracking-wider transition-all border-b-2 cursor-pointer -mb-px ${
-                  activeTab === 'description'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-on-secondary-container hover:text-primary'
-                }`}
-              >
-                Detailed Description
-              </button>
-              <button
-                onClick={() => setActiveTab('specifications')}
-                className={`pb-4 px-6 font-display text-body-md font-bold uppercase tracking-wider transition-all border-b-2 cursor-pointer -mb-px ${
-                  activeTab === 'specifications'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-on-secondary-container hover:text-primary'
-                }`}
-              >
-                Specifications
-              </button>
+            <h3 className="font-display text-headline-md text-primary mb-6">
+              Product Description
+            </h3>
+            <div className="prose max-w-none text-secondary leading-relaxed font-body text-body-lg whitespace-pre-line">
+              {details?.long_description || product.description}
             </div>
-
-            <AnimatePresence mode="wait">
-              {activeTab === 'description' ? (
-                <motion.div
-                  key="desc"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="prose max-w-none text-secondary leading-relaxed font-body text-body-lg"
-                >
-                  <p className="whitespace-pre-line">{details.long_description || product.description}</p>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="specs"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="max-w-3xl"
-                >
-                  {Object.keys(details.specifications || {}).length > 0 ? (
-                    <div className="rounded-2xl overflow-hidden border border-surface-container">
-                      <table className="w-full border-collapse text-left font-body text-body-md">
-                        <tbody>
-                          {Object.entries(details.specifications).map(([key, val], idx) => (
-                            <tr 
-                              key={key} 
-                              className={`border-b border-surface-container ${
-                                idx % 2 === 0 ? 'bg-surface-container-low/30' : 'bg-white'
-                              }`}
-                            >
-                              <td className="p-4 font-bold text-primary w-1/3">{key}</td>
-                              <td className="p-4 text-secondary">{val}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div className="text-on-secondary-container italic font-body">
-                      No technical specifications are available for this product.
-                    </div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         )}
 
@@ -393,10 +296,11 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
                 <span className="absolute -bottom-1 left-0 w-full h-1 bg-accent-lime -z-10"></span>
               </span>
             </h3>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {relatedProducts.map((p) => {
                 const productPrice = p.price;
+                const formattedRelatedName = p.name ? p.name.replace(/_/g, ' ') : '';
                 return (
                   <motion.div
                     key={p.id}
@@ -404,19 +308,19 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
                     className="bg-white rounded-2xl p-4 border border-surface-container hover:shadow-lg transition-all flex flex-col justify-between"
                   >
                     <div>
-                      <div className="aspect-square rounded-xl bg-surface-container-low mb-4 overflow-hidden relative">
-                        <img 
-                          src={p.image_url} 
-                          alt={p.name} 
-                          className="w-full h-full object-cover" 
+                      <div className="aspect-square rounded-xl bg-surface-container-low mb-4 overflow-hidden relative border border-surface-container-high/10">
+                        <img
+                          src={getDirectGoogleDriveLink(p.image_url)}
+                          alt={formattedRelatedName}
+                          className="w-full h-full object-contain object-top bg-white"
                         />
                       </div>
-                      <h4 className="font-display text-body-md font-semibold text-primary mb-1">{p.name}</h4>
-                      <p className="font-body text-body-sm text-on-secondary-container mb-4">{productPrice}</p>
+                      <h4 className="font-display text-body-md font-bold text-primary mb-1.5 line-clamp-2 break-words min-h-[44px] flex items-center leading-snug">{formattedRelatedName}</h4>
+                      <p className="font-body text-body-sm font-semibold text-on-secondary-container mb-4">{productPrice}</p>
                     </div>
-                    
-                    <Link 
-                      href={`/product/${p.slug || p.id}`}
+
+                    <Link
+                      href={`/product/${p.id}`}
                       className="w-full text-center py-2.5 rounded-full border border-primary/20 hover:bg-primary hover:text-white transition-colors font-body text-body-sm font-bold text-primary block"
                     >
                       VIEW DETAILS
