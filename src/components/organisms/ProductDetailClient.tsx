@@ -126,7 +126,7 @@ export default function ProductDetailClient({
 
       <Navbar />
 
-      <main className="pt-[130px] pb-section-gap px-page-margin-mobile md:px-page-margin-desktop max-w-7xl mx-auto relative z-20">
+      <main className="pt-[130px] pb-12 px-page-margin-mobile md:px-page-margin-desktop max-w-7xl mx-auto relative z-20">
         {/* Back navigation & Breadcrumbs */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8 text-body-sm text-on-secondary-container">
           <div className="flex items-center gap-2">
@@ -314,29 +314,6 @@ export default function ProductDetailClient({
                     : "BUY NOW"}
                 </Button>
               </div>
-
-              {/* Share Product URL */}
-              <div className="flex items-center gap-1 bg-surface py-0.5 px-1.5 rounded-lg border border-outline/10 w-fit">
-                <span
-                  className="font-mono text-[7px] text-primary opacity-80 select-all truncate max-w-[100px]"
-                  title={`${typeof window !== "undefined" ? window.location.origin : ""}/product/${product.id}`}
-                >
-                  /product/{product.id}
-                </span>
-                <button
-                  onClick={() => {
-                    const url = `${typeof window !== "undefined" ? window.location.origin : ""}/product/${product.id}`;
-                    navigator.clipboard.writeText(url);
-                    setCopiedLink(product.id);
-                    setTimeout(() => setCopiedLink(null), 2000);
-                  }}
-                  className="text-[7px] text-primary hover:underline font-bold cursor-pointer transition-all whitespace-nowrap"
-                >
-                  {copiedLink === product.id ? "Copied!" : "Copy"}
-                </button>
-              </div>
-
-              <AdBanner slotId="product_detail_sidebar" className="mt-4" />
             </div>
           </div>
         </div>

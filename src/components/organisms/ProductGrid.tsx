@@ -126,7 +126,7 @@ export default function ProductGrid({ initialProducts }: ProductGridProps) {
 
   return (
     <div className="relative z-20 bg-surface">
-      <div className="max-w-[1620px] mx-auto flex justify-center gap-6 px-4 py-section-gap">
+      <div className="max-w-[1620px] mx-auto flex justify-center gap-6 px-4 pt-8 pb-12">
         {/* Left Skyscraper */}
         <div className="skyscraper-sticky-left shrink-0">
           <AdBanner slotId="left_skyscraper" />
@@ -177,7 +177,7 @@ export default function ProductGrid({ initialProducts }: ProductGridProps) {
             {/* Product grid — shimmer skeletons or real cards */}
             <div className="space-y-gutter">
               {loading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-gutter gap-y-4">
                   {Array.from({ length: 8 }).map((_, i) => (
                     <div
                       key={i}
@@ -211,7 +211,7 @@ export default function ProductGrid({ initialProducts }: ProductGridProps) {
                 <AnimatePresence mode="popLayout">
                   {chunks.map((chunk, chunkIdx) => (
                     <div key={`chunk-${chunkIdx}`} className="space-y-gutter">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-gutter gap-y-4">
                         {chunk.map((item) => (
                           <div key={item.id} className="contents">
                             {item.type === 'product' ? (
@@ -224,7 +224,7 @@ export default function ProductGrid({ initialProducts }: ProductGridProps) {
                       </div>
 
                       {chunk.length === 8 && isAdEnabled('homepage_mid_grid') && (
-                        <div className="py-2">
+                        <div className="py-0">
                           <AdBanner 
                             slotId="homepage_mid_grid" 
                             className="w-full" 
