@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Outfit, Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import AdBanner from "@/components/molecules/AdBanner";
+import Script from "next/script";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -44,6 +45,11 @@ export default function RootLayout({
       className={`${outfit.variable} ${inter.variable} ${playfair.variable}`}
     >
       <body>
+        <Script
+          src="https://cloud.umami.is/script.js"
+          data-website-id="202fb15d-ba34-4193-bad0-f359836eb59b"
+          strategy="afterInteractive"
+        />
         <AdBanner slotId="header_top" />
         {children}
         <AdBanner slotId="footer_banner" />
