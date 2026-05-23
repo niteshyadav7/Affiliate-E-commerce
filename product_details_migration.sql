@@ -1,5 +1,5 @@
 -- =========================================================
--- SHOPVERSE MIGRATION: PRODUCT DETAILS
+-- DIVERSIFIED Y&P MIGRATION: PRODUCT DETAILS
 -- Run this in your Supabase SQL Editor
 -- =========================================================
 

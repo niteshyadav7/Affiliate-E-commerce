@@ -7,6 +7,7 @@ Currently, clicking **"BUY NOW"** on a product card immediately triggers the rou
 The existing `products` table only stores: `name`, `description`, `price`, `image_url`, `category`, `slug`, `is_active`. This is insufficient for a rich product landing page.
 
 ### What This Plan Delivers
+
 1. **New `product_details` table** — stores rich product info (highlights, specs, gallery, ratings, stock, etc.)
 2. **Dynamic product landing page** at `/product/[slug]` — premium UI with image gallery, specifications, affiliate CTA
 3. **Updated seed SQL** — detailed data for all 8 existing products
@@ -44,27 +45,27 @@ A new table `product_details` with a 1:1 relationship to `products`:
 CREATE TABLE IF NOT EXISTS product_details (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   product_id UUID UNIQUE REFERENCES products(id) ON DELETE CASCADE,
-  
+
   -- Rich content
   long_description TEXT DEFAULT '',
   highlights TEXT[] DEFAULT '{}',          -- Array of bullet-point highlights
   specifications JSONB DEFAULT '{}',       -- Key-value pairs e.g. {"Weight": "250g", "Battery": "30hrs"}
-  
+
   -- Gallery (array of image URLs)
   gallery_images TEXT[] DEFAULT '{}',
-  
+
   -- Social proof
   rating NUMERIC(2,1) DEFAULT 0.0,         -- e.g. 4.5
   reviews_count INTEGER DEFAULT 0,
-  
+
   -- Stock & shipping
   stock_status TEXT DEFAULT 'in_stock',     -- 'in_stock', 'low_stock', 'out_of_stock'
   shipping_info TEXT DEFAULT 'Free shipping on orders over $50',
-  
+
   -- SEO
   meta_title TEXT DEFAULT '',
   meta_description TEXT DEFAULT '',
-  
+
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -100,6 +101,7 @@ VALUES (
 #### [NEW] [page.tsx](file:///d:/yash/may/E-commerce/src/app/product/[slug]/page.tsx)
 
 A **server component** that:
+
 - Fetches product + product_details + product_links by slug (falling back to UUID)
 - Renders a premium product landing page
 - Passes data to a client component for interactivity
@@ -107,6 +109,7 @@ A **server component** that:
 #### [NEW] [ProductDetailClient.tsx](file:///d:/yash/may/E-commerce/src/components/organisms/ProductDetailClient.tsx)
 
 Client component with:
+
 - **Image gallery** with thumbnail navigation and zoom-on-hover
 - **Product info section**: name, price, rating stars, reviews count, stock badge
 - **Highlights** as styled bullet points
@@ -119,7 +122,7 @@ Client component with:
 - Framer Motion entrance animations consistent with existing site design
 - Fully responsive (mobile-first)
 
-**Design approach**: Matches the existing Shopverse "Organic Luxury" design system — Outfit/Inter fonts, navy primary, lime/coral accents, glassmorphism, rounded corners, generous whitespace.
+**Design approach**: Matches the existing Diversified Y&P "Organic Luxury" design system — Outfit/Inter fonts, navy primary, lime/coral accents, glassmorphism, rounded corners, generous whitespace.
 
 ---
 
@@ -172,22 +175,23 @@ The form will fetch existing details when editing, and create/update them on sav
 
 ## File Summary
 
-| Action | File | Purpose |
-|--------|------|---------|
-| **NEW** | `product_details_migration.sql` | DB migration for `product_details` table |
-| **NEW** | `seed_product_details.sql` | Seed data for all 8 products |
-| **NEW** | `src/app/product/[slug]/page.tsx` | Product detail page (server component) |
-| **NEW** | `src/components/organisms/ProductDetailClient.tsx` | Product detail UI (client component) |
-| **NEW** | `src/app/api/products/[id]/details/route.ts` | API for product details CRUD |
-| **MODIFY** | `src/components/admin/ProductForm.tsx` | Add details section to admin form |
-| **MODIFY** | `src/components/molecules/ProductCard.tsx` | Link cards to detail page |
-| **MODIFY** | `src/components/organisms/ProductGrid.tsx` | Pass slug, update navigation |
+| Action     | File                                               | Purpose                                  |
+| ---------- | -------------------------------------------------- | ---------------------------------------- |
+| **NEW**    | `product_details_migration.sql`                    | DB migration for `product_details` table |
+| **NEW**    | `seed_product_details.sql`                         | Seed data for all 8 products             |
+| **NEW**    | `src/app/product/[slug]/page.tsx`                  | Product detail page (server component)   |
+| **NEW**    | `src/components/organisms/ProductDetailClient.tsx` | Product detail UI (client component)     |
+| **NEW**    | `src/app/api/products/[id]/details/route.ts`       | API for product details CRUD             |
+| **MODIFY** | `src/components/admin/ProductForm.tsx`             | Add details section to admin form        |
+| **MODIFY** | `src/components/molecules/ProductCard.tsx`         | Link cards to detail page                |
+| **MODIFY** | `src/components/organisms/ProductGrid.tsx`         | Pass slug, update navigation             |
 
 ---
 
 ## Verification Plan
 
 ### Automated Tests
+
 - `npm run build` — ensure no TypeScript/build errors
 - Visit `/product/acoustic-pro-max` — verify the page renders with all sections
 - Click "BUY NOW" on the detail page → verify redirect triggers via `/api/redirect/[id]`
@@ -195,6 +199,7 @@ The form will fetch existing details when editing, and create/update them on sav
 - Test with non-existent slug → verify 404 handling
 
 ### Manual Verification
+
 - Browse homepage → click product card → verify navigation to detail page
 - Verify responsive layout on mobile viewport
 - Verify admin form saves and loads product details correctly

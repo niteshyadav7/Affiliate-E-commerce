@@ -1,8 +1,8 @@
 "use client";
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { ShoppingBag, ArrowLeft, Home, Sparkles } from 'lucide-react';
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ShoppingBag, ArrowLeft, Home, Sparkles } from "lucide-react";
 
 export default function NotFound() {
   const router = useRouter();
@@ -17,12 +17,11 @@ export default function NotFound() {
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]"></div>
 
       <div className="relative z-10 text-center max-w-lg mx-auto space-y-8">
-        
         {/* Floating Animation */}
         <div className="relative w-48 h-48 mx-auto flex items-center justify-center">
           {/* Outer rotating ring */}
           <div className="absolute inset-0 border border-dashed border-indigo-500/30 rounded-full animate-[spin_20s_linear_infinite]"></div>
-          
+
           {/* Pulsing glow background */}
           <div className="absolute w-32 h-32 bg-indigo-500/15 rounded-full blur-2xl animate-pulse"></div>
 
@@ -39,10 +38,11 @@ export default function NotFound() {
             404
           </h1>
           <h2 className="text-2xl font-display font-bold tracking-tight text-white">
-            Lost in the Shopverse
+            Lost in the Diversified Y&P
           </h2>
           <p className="text-gray-400 text-sm leading-relaxed max-w-sm mx-auto">
-            The coordinates you requested returned an empty void. The page may have shifted orbits, or it never existed in this dimension.
+            The coordinates you requested returned an empty void. The page may
+            have shifted orbits, or it never existed in this dimension.
           </p>
         </div>
 
@@ -54,7 +54,7 @@ export default function NotFound() {
           >
             <ArrowLeft className="w-4 h-4" /> Go Back
           </button>
-          
+
           <Link
             href="/"
             className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-sm font-semibold rounded-xl shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30 transition-all duration-200 cursor-pointer"

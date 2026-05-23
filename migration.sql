@@ -1,5 +1,5 @@
 -- =========================================================
--- SHOPVERSE MIGRATION: SLUGS & DETAILED CLICK TRACKING
+-- DIVERSIFIED Y&P MIGRATION: SLUGS & DETAILED CLICK TRACKING
 -- Run this in your Supabase SQL Editor
 -- =========================================================
 

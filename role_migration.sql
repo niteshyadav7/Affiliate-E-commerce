@@ -1,5 +1,5 @@
 -- =========================================================
--- SHOPVERSE MIGRATION: MULTI-ROLE ADMIN AUTHENTICATION
+-- DIVERSIFIED Y&P MIGRATION: MULTI-ROLE ADMIN AUTHENTICATION
 -- Run this in your Supabase SQL Editor
 -- =========================================================
 

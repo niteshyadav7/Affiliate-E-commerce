@@ -1,5 +1,5 @@
 -- ============================================
--- SHOPVERSE SEED DATA
+-- DIVERSIFIED Y&P SEED DATA
 -- Run this in your Supabase SQL Editor
 -- to populate the store with the Stitch design products!
 -- ============================================

@@ -1,5 +1,5 @@
 -- ============================================
--- SHOPVERSE NEWSLETTER SCHEMA
+-- DIVERSIFIED Y&P NEWSLETTER SCHEMA
 -- Run this in your Supabase SQL Editor
 -- ============================================
 

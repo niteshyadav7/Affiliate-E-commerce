@@ -1,5 +1,5 @@
 -- ============================================
--- SHOPVERSE DATABASE SCHEMA
+-- DIVERSIFIED Y&P DATABASE SCHEMA
 -- Run this in your Supabase SQL Editor
 -- ============================================
 

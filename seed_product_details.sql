@@ -1,5 +1,5 @@
 -- =========================================================
--- SHOPVERSE SEED DATA: PRODUCT DETAILS & SLUGS
+-- DIVERSIFIED Y&P SEED DATA: PRODUCT DETAILS & SLUGS
 -- Run this in your Supabase SQL Editor to populate rich details!
 -- =========================================================
 

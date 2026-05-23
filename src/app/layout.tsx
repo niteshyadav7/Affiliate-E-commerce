@@ -25,10 +25,11 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "SHOPVERSE",
+  title: "DIVERSIFIED Y&P",
   description:
     "Discover curated premium products from top brands across electronics, fashion, and lifestyle. Smart shopping starts here.",
-  keywords: "ecommerce, shopping, premium products, electronics, fashion, lifestyle",
+  keywords:
+    "ecommerce, shopping, premium products, electronics, fashion, lifestyle",
 };
 
 export default function RootLayout({
@@ -37,7 +38,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${outfit.variable} ${inter.variable} ${playfair.variable}`}>
+    <html
+      lang="en"
+      className={`${outfit.variable} ${inter.variable} ${playfair.variable}`}
+    >
       <body>{children}</body>
     </html>
   );
