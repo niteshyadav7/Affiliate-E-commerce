@@ -141,3 +141,71 @@
   background-size: 1400px 100%;
   animation: shimmer 1.8s ease-in-out infinite;
 }
+
+/* Responsive Skyscraper Ads styling */
+.skyscraper-sticky-left {
+  display: none !important;
+}
+.skyscraper-sticky-right {
+  display: none !important;
+}
+.mobile-anchor-container {
+  display: none !important;
+}
+.tablet-anchor-container {
+  display: none !important;
+}
+
+@media (max-width: 767px) {
+  .mobile-anchor-container {
+    display: flex !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 49 !important;
+    justify-content: center !important;
+    align-items: center !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(12px) !important;
+    border-t: 1px solid var(--color-surface-container) !important;
+    padding: 8px 0 !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .tablet-anchor-container {
+    display: flex !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 49 !important;
+    justify-content: center !important;
+    align-items: center !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(12px) !important;
+    border-t: 1px solid var(--color-surface-container) !important;
+    padding: 8px 0 !important;
+  }
+}
+
+@media (min-width: 1200px) {
+  .skyscraper-sticky-left {
+    display: block !important;
+    position: sticky !important;
+    top: 130px !important;
+    width: 160px !important;
+    height: 600px !important;
+    z-index: 30 !important;
+  }
+  .skyscraper-sticky-right {
+    display: block !important;
+    position: sticky !important;
+    top: 130px !important;
+    width: 160px !important;
+    height: 600px !important;
+    z-index: 30 !important;
+  }
+}
+

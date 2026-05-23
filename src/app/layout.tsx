@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit, Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
+import AdBanner from "@/components/molecules/AdBanner";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -42,7 +43,13 @@ export default function RootLayout({
       lang="en"
       className={`${outfit.variable} ${inter.variable} ${playfair.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        <AdBanner slotId="header_top" />
+        {children}
+        <AdBanner slotId="footer_banner" />
+        <AdBanner slotId="mobile_anchor" className="mobile-anchor-container" />
+        <AdBanner slotId="tablet_anchor" className="tablet-anchor-container" />
+      </body>
     </html>
   );
 }

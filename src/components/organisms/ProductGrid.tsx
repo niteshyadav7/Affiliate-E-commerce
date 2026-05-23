@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import ProductCard from '../molecules/ProductCard';
 import { supabase } from '@/lib/supabase';
+import AdBanner from '../molecules/AdBanner';
 
 const PRODUCTS = [
   { id: 'a1b2c3d4-e5f6-4a5b-8c7d-9e0f1a2b3c4d', name: "Acoustic Pro Max", slug: "acoustic-pro-max", price: 299.00, category: "ELECTRONICS", tag: "ELECTRONICS", image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAZ8ZxBELdGezf2X1RdWRBcZSz3S9vJsXJj9bO0vnGYaNNcBB2dqbGQHF0yp0Cs6l1OZ1ghSB6UKe2pnKi6bFNsl98lWaVFRrrLsY3k0Xil55X8WLQZb8mf3SOTtv8uTNUipFW0rqaCXZSX00v7HFT4yUoHspg61T5c-961rzFzTadlOPfotNkJ1ZlLdSxcGd6_58s75nQrhpnasVHJ6vpBkzlzcgHUQaz2_ksINM4VvBrIOfD1G7HWd9JN-KnvpaXqBb7V0Arsc-b4" },
@@ -29,20 +30,24 @@ export default function ProductGrid({ initialProducts }: ProductGridProps) {
   );
   const [activeCategory, setActiveCategory] = useState('ALL');
   const [loading, setLoading] = useState(!cachedProducts && !(initialProducts && initialProducts.length > 0));
+  const [adsConfig, setAdsConfig] = useState<Record<string, boolean>>({
+    homepage_grid: false,
+    homepage_mid_grid: false,
+  });
 
   useEffect(() => {
-    async function loadProducts() {
+    async function loadData() {
       try {
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .eq('is_active', true);
+        const [productsRes, adsRes] = await Promise.all([
+          supabase.from('products').select('*').eq('is_active', true),
+          supabase.from('ad_configs').select('id, is_enabled')
+        ]);
 
-        if (error) throw error;
+        if (productsRes.error) throw productsRes.error;
 
         let mapped: any[] = [];
-        if (data && data.length > 0) {
-          mapped = data.map(p => ({
+        if (productsRes.data && productsRes.data.length > 0) {
+          mapped = productsRes.data.map(p => ({
             id: p.id,
             slug: p.slug,
             name: p.name,
@@ -61,8 +66,16 @@ export default function ProductGrid({ initialProducts }: ProductGridProps) {
         }
         setProducts(mapped);
         cachedProducts = mapped;
+
+        if (adsRes.data) {
+          const configMap: Record<string, boolean> = {};
+          adsRes.data.forEach(ad => {
+            configMap[ad.id] = ad.is_enabled;
+          });
+          setAdsConfig(configMap);
+        }
       } catch (err) {
-        console.warn('Could not load products from database, using fallback data:', err);
+        console.warn('Could not load data from database, using fallback data:', err);
         const fallbackMapped = PRODUCTS.map(p => ({
           ...p,
           category: p.category.toUpperCase(),
@@ -75,8 +88,12 @@ export default function ProductGrid({ initialProducts }: ProductGridProps) {
       }
     }
 
-    loadProducts();
+    loadData();
   }, []);
+
+  const isAdEnabled = (slotId: string) => {
+    return adsConfig[slotId] ?? false;
+  };
 
   const categories = ['ALL', ...Array.from(new Set(products.map(p => p.category)))];
 
@@ -84,93 +101,149 @@ export default function ProductGrid({ initialProducts }: ProductGridProps) {
     ? products 
     : products.filter(p => p.category === activeCategory);
 
+  // Construct a flat list of items to render to maintain perfect grid row alignment
+  const gridItems: { id: string; type: 'product' | 'ad'; data?: any }[] = [];
+  filteredProducts.forEach((product, idx) => {
+    gridItems.push({ id: product.id, type: 'product', data: product });
+    // Render native card ad exactly after the 4th item (index 3) ONLY if it's enabled in the database config
+    if (idx === 3 && isAdEnabled('homepage_grid')) {
+      gridItems.push({ id: 'grid-native-ad', type: 'ad' });
+    }
+  });
+
+  // If we have fewer than 4 products, and the native ad is enabled, we append the native ad at the end
+  if (filteredProducts.length > 0 && filteredProducts.length < 4 && isAdEnabled('homepage_grid')) {
+    if (!gridItems.some(item => item.id === 'grid-native-ad')) {
+      gridItems.push({ id: 'grid-native-ad', type: 'ad' });
+    }
+  }
+
+  // Chunk gridItems into groups of 8 (exactly 2 complete rows on desktop)
+  const chunks: any[][] = [];
+  for (let i = 0; i < gridItems.length; i += 8) {
+    chunks.push(gridItems.slice(i, i + 8));
+  }
+
   return (
     <div className="relative z-20 bg-surface">
-      <section className="py-section-gap px-page-margin-mobile md:px-page-margin-desktop max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-8">
-          <div className="space-y-4">
-            <h2 className="font-display text-headline-lg-mobile md:text-headline-lg text-primary">
-              Featured <span className="relative">Products
-                <span className="absolute -bottom-1 left-0 w-full h-2 bg-accent-lime -z-10"></span>
-              </span>
-            </h2>
-            
-            {/* Category filter pills — show skeletons while loading */}
-            {loading ? (
-              <div className="flex flex-wrap gap-2">
-                {[80, 110, 72, 88, 96, 104, 68].map((w, i) => (
-                  <div
-                    key={i}
-                    className="shimmer rounded-full h-[32px]"
-                    style={{ width: w, animationDelay: `${i * 0.08}s` }}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {categories.map(cat => (
-                  <button 
-                    key={cat}
-                    onClick={() => setActiveCategory(cat)}
-                    className={`px-6 py-2 rounded-full font-body text-[10px] font-bold transition-all cursor-pointer ${
-                      activeCategory === cat 
-                        ? 'bg-primary text-white' 
-                        : 'bg-surface-container-low text-on-secondary-container hover:bg-primary/10'
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+      <div className="max-w-[1620px] mx-auto flex justify-center gap-6 px-4 py-section-gap">
+        {/* Left Skyscraper */}
+        <div className="skyscraper-sticky-left shrink-0">
+          <AdBanner slotId="left_skyscraper" />
         </div>
 
-        {/* Product grid — shimmer skeletons or real cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
-          {loading ? (
-            <>
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="bg-white rounded-2xl p-4 shadow-sm border border-surface-container h-full flex flex-col justify-between"
-                  style={{ animationDelay: `${i * 0.07}s` }}
-                >
-                  {/* Image skeleton */}
-                  <div>
-                    <div className="relative aspect-square rounded-xl mb-4 overflow-hidden">
-                      <div className="shimmer w-full h-full" style={{ animationDelay: `${i * 0.1}s` }} />
-                      {/* Fake tag badge */}
+        {/* Main Content Content Wrapper */}
+        <div className="flex-1 max-w-7xl min-w-0">
+          <section className="px-page-margin-mobile md:px-page-margin-desktop">
+            <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-8">
+              <div className="space-y-4">
+                <h2 className="font-display text-headline-lg-mobile md:text-headline-lg text-primary">
+                  Featured <span className="relative">Products
+                    <span className="absolute -bottom-1 left-0 w-full h-2 bg-accent-lime -z-10"></span>
+                  </span>
+                </h2>
+                
+                {/* Category filter pills — show skeletons while loading */}
+                {loading ? (
+                  <div className="flex flex-wrap gap-2">
+                    {[80, 110, 72, 88, 96, 104, 68].map((w, i) => (
                       <div
-                        className="shimmer absolute top-3 left-3 rounded-full h-[20px]"
-                        style={{ width: 72, animationDelay: `${i * 0.12}s` }}
+                        key={i}
+                        className="shimmer rounded-full h-[32px]"
+                        style={{ width: w, animationDelay: `${i * 0.08}s` }}
                       />
-                    </div>
-                    {/* Title skeleton — two lines */}
-                    <div className="space-y-2 mb-2 min-h-[44px] flex flex-col justify-center">
-                      <div className="shimmer rounded-md h-[14px] w-[85%]" style={{ animationDelay: `${i * 0.09}s` }} />
-                      <div className="shimmer rounded-md h-[14px] w-[55%]" style={{ animationDelay: `${i * 0.11}s` }} />
-                    </div>
-                    {/* Price skeleton */}
-                    <div className="shimmer rounded-md h-[12px] w-[40%] mb-3" style={{ animationDelay: `${i * 0.13}s` }} />
+                    ))}
                   </div>
-                  {/* Button skeleton */}
-                  <div className="shimmer rounded-full h-[36px] w-full" style={{ animationDelay: `${i * 0.14}s` }} />
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {categories.map(cat => (
+                      <button 
+                        key={cat}
+                        onClick={() => setActiveCategory(cat)}
+                        className={`px-6 py-2 rounded-full font-body text-[10px] font-bold transition-all cursor-pointer ${
+                          activeCategory === cat 
+                            ? 'bg-primary text-white' 
+                            : 'bg-surface-container-low text-on-secondary-container hover:bg-primary/10'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Product grid — shimmer skeletons or real cards */}
+            <div className="space-y-gutter">
+              {loading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="bg-white rounded-2xl p-4 shadow-sm border border-surface-container h-full flex flex-col justify-between"
+                      style={{ animationDelay: `${i * 0.07}s` }}
+                    >
+                      {/* Image skeleton */}
+                      <div>
+                        <div className="relative aspect-square rounded-xl mb-4 overflow-hidden">
+                          <div className="shimmer w-full h-full" style={{ animationDelay: `${i * 0.1}s` }} />
+                          {/* Fake tag badge */}
+                          <div
+                            className="shimmer absolute top-3 left-3 rounded-full h-[20px]"
+                            style={{ width: 72, animationDelay: `${i * 0.12}s` }}
+                          />
+                        </div>
+                        {/* Title skeleton — two lines */}
+                        <div className="space-y-2 mb-2 min-h-[44px] flex flex-col justify-center">
+                          <div className="shimmer rounded-md h-[14px] w-[85%]" style={{ animationDelay: `${i * 0.09}s` }} />
+                          <div className="shimmer rounded-md h-[14px] w-[55%]" style={{ animationDelay: `${i * 0.11}s` }} />
+                        </div>
+                        {/* Price skeleton */}
+                        <div className="shimmer rounded-md h-[12px] w-[40%] mb-3" style={{ animationDelay: `${i * 0.13}s` }} />
+                      </div>
+                      {/* Button skeleton */}
+                      <div className="shimmer rounded-full h-[36px] w-full" style={{ animationDelay: `${i * 0.14}s` }} />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </>
-          ) : (
-            <AnimatePresence>
-              {filteredProducts.map((product) => (
-                <ProductCard 
-                  key={product.id} 
-                  {...product} 
-                />
-              ))}
-            </AnimatePresence>
-          )}
+              ) : (
+                <AnimatePresence mode="popLayout">
+                  {chunks.map((chunk, chunkIdx) => (
+                    <div key={`chunk-${chunkIdx}`} className="space-y-gutter">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
+                        {chunk.map((item) => (
+                          <div key={item.id} className="contents">
+                            {item.type === 'product' ? (
+                              <ProductCard {...item.data} />
+                            ) : (
+                              <AdBanner slotId="homepage_grid" />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      {chunk.length === 8 && isAdEnabled('homepage_mid_grid') && (
+                        <div className="py-2">
+                          <AdBanner 
+                            slotId="homepage_mid_grid" 
+                            className="w-full" 
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </AnimatePresence>
+              )}
+            </div>
+          </section>
         </div>
-      </section>
+
+        {/* Right Skyscraper */}
+        <div className="skyscraper-sticky-right shrink-0">
+          <AdBanner slotId="right_skyscraper" />
+        </div>
+      </div>
     </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Package, BarChart3, Mail, Users } from 'lucide-react';
+import { LayoutDashboard, Package, BarChart3, Mail, Users, Megaphone } from 'lucide-react';
 
 export default function SidebarNav({ role = 'viewer' }: { role?: string }) {
   const pathname = usePathname();
@@ -10,6 +10,7 @@ export default function SidebarNav({ role = 'viewer' }: { role?: string }) {
   const navItems = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/admin/products', label: 'Products', icon: Package },
+    { href: '/admin/ads', label: 'Ads Manager', icon: Megaphone },
     { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
   ];
 

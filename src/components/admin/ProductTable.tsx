@@ -183,15 +183,18 @@ export default function ProductTable({ role = "viewer" }: { role?: string }) {
                         <LinkIcon className="w-3.5 h-3.5" />{" "}
                         {product.product_links?.length || 0} active links
                       </span>
-                      <div className="flex items-center gap-1.5 mt-1 bg-surface py-1 px-2 rounded-lg border border-outline/10 w-fit">
-                        <span className="font-mono text-[10px] text-primary opacity-80 select-all">
+                      <div className="flex items-center gap-1 mt-1 bg-surface py-0.5 px-1.5 rounded-lg border border-outline/10 w-fit max-w-[120px]">
+                        <span
+                          className="font-mono text-[7px] text-primary opacity-80 select-all truncate"
+                          title={`/r/${product.slug || "no-slug"}`}
+                        >
                           /r/{product.slug || "no-slug"}
                         </span>
                         <button
                           onClick={() =>
                             copyToClipboard(product.slug, product.id)
                           }
-                          className="text-[10px] text-primary hover:underline font-bold cursor-pointer transition-all whitespace-nowrap"
+                          className="text-[7px] text-primary hover:underline font-bold cursor-pointer transition-all whitespace-nowrap"
                         >
                           {copiedId === product.id ? "Copied!" : "Copy"}
                         </button>
