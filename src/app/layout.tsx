@@ -45,11 +45,10 @@ export default function RootLayout({
       className={`${outfit.variable} ${inter.variable} ${playfair.variable}`}
     >
       <head>
-        <Script
+        <script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6814953421558759"
           crossOrigin="anonymous"
-          strategy="beforeInteractive"
         />
       </head>
       <body>
