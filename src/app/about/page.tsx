@@ -2,7 +2,7 @@ import Navbar from "@/components/organisms/Navbar";
 import Footer from "@/components/organisms/Footer";
 import Masks from "@/components/Masks";
 import type { Metadata } from "next";
-import { ShoppingBag, Sparkles, ShieldCheck, Users, Globe, Zap } from "lucide-react";
+import { ShoppingBag, Sparkles, ShieldCheck, Users, Globe, Zap, Search, CheckCircle, Award } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "About Us - DIVERSIFIED Y&P",
@@ -67,6 +67,94 @@ export default function AboutPage() {
                 <li><strong>Transparent & Honest:</strong> No inflated reviews, no misleading descriptions. We present products with honest, accurate information so you can make confident decisions.</li>
                 <li><strong>Customer-Centric Service:</strong> From seamless browsing to responsive customer support, every touchpoint is designed to deliver a premium experience.</li>
               </ul>
+            </div>
+          </div>
+
+          {/* New Section: Curation Framework & Trust Guarantee */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
+            {/* Left: 4-Step Curatorial Framework */}
+            <div className="lg:col-span-7 bg-white rounded-3xl p-8 border border-surface-container shadow-sm grain-texture relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-primary" />
+              <h3 className="font-display text-2xl font-bold text-primary mb-6">Our Curation &amp; Quality Standard</h3>
+              
+              <div className="space-y-6">
+                <div className="flex gap-4 items-start">
+                  <div className="w-8 h-8 rounded-lg bg-primary/5 flex items-center justify-center border border-primary/10 shrink-0 mt-0.5">
+                    <Search className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-display font-bold text-primary text-body-md mb-1">1. Research &amp; Market Discovery</h4>
+                    <p className="font-body text-body-sm text-secondary leading-relaxed">
+                      We monitor worldwide design trends, tech journals, and customer feedback pools to discover exceptional products before they hit mainstream markets.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 items-start border-t border-surface-container pt-4">
+                  <div className="w-8 h-8 rounded-lg bg-primary/5 flex items-center justify-center border border-primary/10 shrink-0 mt-0.5">
+                    <CheckCircle className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-display font-bold text-primary text-body-md mb-1">2. Rigorous Physical Testing</h4>
+                    <p className="font-body text-body-sm text-secondary leading-relaxed">
+                      Sample units are procured and tested for build quality, structural integrity, material longevity, and ease of use in real-world everyday settings.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 items-start border-t border-surface-container pt-4">
+                  <div className="w-8 h-8 rounded-lg bg-primary/5 flex items-center justify-center border border-primary/10 shrink-0 mt-0.5">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-display font-bold text-primary text-body-md mb-1">3. Aesthetic &amp; Ergonomic Assessment</h4>
+                    <p className="font-body text-body-sm text-secondary leading-relaxed">
+                      We evaluate visual harmony, packaging design, user interface comfort, and overall styling to ensure it matches the premium aesthetic standard.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 items-start border-t border-surface-container pt-4">
+                  <div className="w-8 h-8 rounded-lg bg-primary/5 flex items-center justify-center border border-primary/10 shrink-0 mt-0.5">
+                    <Award className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-display font-bold text-primary text-body-md mb-1">4. Value Validation &amp; Approval</h4>
+                    <p className="font-body text-body-sm text-secondary leading-relaxed">
+                      Pricing structures are verified with suppliers to make sure they represent genuine value-for-money before receiving the DIVERSIFIED stamp.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Security & Trust Banner */}
+            <div className="lg:col-span-5 bg-gradient-to-br from-primary to-primary-container text-white rounded-3xl p-8 flex flex-col justify-between relative overflow-hidden shadow-sm">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,var(--color-accent-lime),transparent_55%)] opacity-20" />
+              
+              <div className="space-y-6 relative z-10">
+                <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center">
+                  <ShieldCheck className="w-6 h-6 text-accent-lime" />
+                </div>
+                <div>
+                  <h3 className="font-display text-2xl font-bold text-white mb-3">100% Authenticity Guarantee</h3>
+                  <p className="font-body text-body-sm text-white/80 leading-relaxed">
+                    At DIVERSIFIED Y&amp;P, we stand firmly behind the authenticity of our entire inventory. We maintain direct partnerships with registered manufacturers, verified distributors, and authorized brand owners. 
+                  </p>
+                </div>
+                <div className="border-t border-white/10 pt-4">
+                  <h4 className="font-display font-bold text-white text-body-sm mb-1">No Counterfeits. Ever.</h4>
+                  <p className="font-body text-body-xs text-white/70">
+                    Every product is shipped in original retail packaging containing serial tracking numbers and manufacturer warranty certifications.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-8 border border-white/15 bg-white/5 rounded-2xl p-4 relative z-10">
+                <p className="font-body text-[11px] text-white/70 leading-normal">
+                  🔐 <strong>Shopping Security:</strong> Our payments infrastructure complies fully with PCI-DSS protocols, ensuring your transactional metadata is fully encrypted at all times.
+                </p>
+              </div>
             </div>
           </div>
 
