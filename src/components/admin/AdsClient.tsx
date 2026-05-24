@@ -15,6 +15,7 @@ import {
   Info
 } from "lucide-react";
 import Button from "@/components/atoms/Button";
+import { getDirectGoogleDriveLink } from "@/lib/utils";
 
 interface AdConfig {
   id: string;
@@ -501,7 +502,7 @@ ON CONFLICT (id) DO NOTHING;`;
                     <div className="border border-surface-container rounded-2xl overflow-hidden bg-surface-container-low max-h-[160px] flex items-center justify-center p-2">
                       <a href={currentConfig.link_url} target="_blank" rel="noreferrer" className="block max-w-full">
                         <img
-                          src={currentConfig.image_url}
+                          src={getDirectGoogleDriveLink(currentConfig.image_url)}
                           alt="Banner Preview"
                           className="max-h-[140px] max-w-full object-contain rounded-lg"
                         />

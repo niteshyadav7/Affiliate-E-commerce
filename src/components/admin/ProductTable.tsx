@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import Button from "@/components/atoms/Button";
 import ProductForm from "./ProductForm";
+import { getDirectGoogleDriveLink } from "@/lib/utils";
 
 export default function ProductTable({ role = "viewer" }: { role?: string }) {
   const [products, setProducts] = useState<any[]>([]);
@@ -222,7 +223,7 @@ export default function ProductTable({ role = "viewer" }: { role?: string }) {
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-surface flex-shrink-0 overflow-hidden">
                         <img
-                          src={product.image_url}
+                          src={getDirectGoogleDriveLink(product.image_url)}
                           alt={product.name}
                           className="w-full h-full object-cover"
                         />

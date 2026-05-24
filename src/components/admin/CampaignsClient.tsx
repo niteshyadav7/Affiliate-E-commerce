@@ -13,6 +13,7 @@ import {
   Smartphone,
 } from "lucide-react";
 import Button from "@/components/atoms/Button";
+import { getDirectGoogleDriveLink } from "@/lib/utils";
 
 interface Product {
   id: string;
@@ -396,7 +397,7 @@ export default function CampaignsClient() {
                         >
                           <img
                             src={
-                              p.image_url ||
+                              getDirectGoogleDriveLink(p.image_url) ||
                               "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100"
                             }
                             alt={p.name}

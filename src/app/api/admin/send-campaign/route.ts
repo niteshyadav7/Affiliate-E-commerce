@@ -3,6 +3,7 @@ import nodemailer from "nodemailer";
 import { supabaseServer } from "@/lib/supabase-server";
 
 import { cookies } from "next/headers";
+import { getDirectGoogleDriveLink } from "@/lib/utils";
 
 export async function POST(request: Request) {
   try {
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
             .map(
               (p) => `
             <div style="padding: 15px 0; border-bottom: 1px solid #f3f4f6; display: block; clear: both;">
-              <img src="${p.image_url}" alt="${p.name}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px; float: left; margin-right: 15px; border: 1px solid #f3f4f6;" />
+              <img src="${getDirectGoogleDriveLink(p.image_url)}" alt="${p.name}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px; float: left; margin-right: 15px; border: 1px solid #f3f4f6;" />
               <div style="float: left; max-width: 380px;">
                 <h4 style="margin: 0; color: #111827; font-size: 15px; font-weight: 600;">${p.name}</h4>
                 <p style="margin: 4px 0 8px 0; color: #4b5563; font-size: 12px; line-height: 1.4; height: 34px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${p.description || "No description available."}</p>
