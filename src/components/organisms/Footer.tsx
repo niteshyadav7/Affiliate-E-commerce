@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Send } from "lucide-react";
+import Link from "next/link";
 import Button from "../atoms/Button";
 
 export default function Footer() {
@@ -54,16 +55,23 @@ export default function Footer() {
             </h4>
             <ul className="flex flex-col gap-4">
               {(title === "QUICK LINKS"
-                ? ["Privacy Policy", "Terms of Service", "Shipping & Returns"]
-                : ["Contact Us", "Wholesale"]
+                ? [
+                    { name: "Privacy Policy", href: "/privacy-policy" },
+                    { name: "Terms of Service", href: "/terms-of-service" },
+                    { name: "About Us", href: "/about" }
+                  ]
+                : [
+                    { name: "Contact Us", href: "/contact" },
+                    { name: "Shipping & Returns", href: "/terms-of-service#shipping" }
+                  ]
               ).map((link) => (
-                <li key={link}>
-                  <a
+                <li key={link.name}>
+                  <Link
                     className="font-body text-body-md text-secondary-fixed-dim/70 hover:text-accent-lime hover:underline decoration-accent-lime underline-offset-8 transition-all"
-                    href="#"
+                    href={link.href}
                   >
-                    {link}
-                  </a>
+                    {link.name}
+                  </Link>
                 </li>
               ))}
             </ul>

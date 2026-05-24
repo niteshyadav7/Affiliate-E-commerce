@@ -157,7 +157,7 @@ export default function AdBanner({ slotId, className = "" }: AdBannerProps) {
 
   // Determine standard wrapper responsive styles depending on slot
   let sizeClasses = "w-full max-w-7xl mx-auto my-6 px-4 md:px-8";
-  if (slotId === "homepage_hero" || slotId === "homepage_mid_grid" || slotId === "footer_banner") {
+  if (slotId === "homepage_hero" || slotId === "homepage_mid_grid") {
     sizeClasses = "w-full max-w-7xl mx-auto my-2 px-4 md:px-8";
   } else if (slotId === "homepage_grid") {
     // Native Card format

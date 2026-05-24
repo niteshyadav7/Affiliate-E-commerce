@@ -19,6 +19,7 @@ import Button from "../atoms/Button";
 import Navbar from "./Navbar";
 import Masks from "../Masks";
 import AdBanner from "../molecules/AdBanner";
+import Footer from "./Footer";
 import { getDirectGoogleDriveLink } from "@/lib/utils";
 
 interface ProductLinkType {
@@ -386,6 +387,7 @@ export default function ProductDetailClient({
           </div>
         )}
       </main>
+      <Footer />
     </div>
   );
 }

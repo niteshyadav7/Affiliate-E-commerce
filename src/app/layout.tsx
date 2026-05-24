@@ -50,9 +50,15 @@ export default function RootLayout({
           data-website-id="202fb15d-ba34-4193-bad0-f359836eb59b"
           strategy="afterInteractive"
         />
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6814953421558759"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
         <AdBanner slotId="header_top" />
         {children}
-        <AdBanner slotId="footer_banner" />
+
         <AdBanner slotId="mobile_anchor" className="mobile-anchor-container" />
         <AdBanner slotId="tablet_anchor" className="tablet-anchor-container" />
       </body>

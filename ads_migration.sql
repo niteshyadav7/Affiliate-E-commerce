@@ -110,13 +110,5 @@ INSERT INTO ad_configs (id, label, is_enabled, ad_type, image_url, link_url) VAL
   'custom', 
   'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=700&q=80', 
   '/'
-),
-(
-  'footer_banner', 
-  'Storefront Footer Banner (All Devices)', 
-  false, 
-  'custom', 
-  'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1200&q=80', 
-  '/'
 )
 ON CONFLICT (id) DO NOTHING;

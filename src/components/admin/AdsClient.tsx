@@ -72,8 +72,7 @@ INSERT INTO ad_configs (id, label, is_enabled, ad_type, image_url, link_url) VAL
 ('product_detail_sidebar', 'Product Page Sidebar/CTA Ad (300x250)', false, 'custom', 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=600&q=80', '/'),
 ('product_detail_bottom', 'Product Page Bottom Banner (728x90)', false, 'custom', 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=800&q=80', '/'),
 ('mobile_anchor', 'Mobile Sticky Bottom Anchor (320x50 - Mobile Only)', false, 'custom', 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=400&q=80', '/'),
-('tablet_anchor', 'Tablet Sticky Bottom Anchor (728x90 - Tablet Only)', false, 'custom', 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=700&q=80', '/'),
-('footer_banner', 'Storefront Footer Banner (All Devices)', false, 'custom', 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1200&q=80', '/')
+('tablet_anchor', 'Tablet Sticky Bottom Anchor (728x90 - Tablet Only)', false, 'custom', 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=700&q=80', '/')
 ON CONFLICT (id) DO NOTHING;`;
 
   useEffect(() => {
