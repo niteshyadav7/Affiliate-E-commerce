@@ -334,6 +334,7 @@ function BulkUploadModal({
   const [success, setSuccess] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [activeTab, setActiveTab] = useState<"upload" | "schema">("upload");
+  const [uploadMode, setUploadMode] = useState<"create" | "edit">("create");
   const [selectedSchemaCol, setSelectedSchemaCol] = useState<number>(0);
   const [hoveredSchemaCol, setHoveredSchemaCol] = useState<number | null>(null);
   const [sampleRowCopiedIdx, setSampleRowCopiedIdx] = useState<number | null>(
@@ -613,6 +614,9 @@ function BulkUploadModal({
         const imageUrlIndex = headers.indexOf("image url");
         const descriptionIndex = headers.indexOf("description");
         const redirectUrlsIndex = headers.indexOf("redirect urls");
+        const idIndex = headers.indexOf("id");
+        const slugIndex = headers.indexOf("slug");
+        const isActiveIndex = headers.indexOf("is active");
 
         const longDescIndex = headers.indexOf("long description");
         const highlightsIndex = headers.indexOf("highlights");
@@ -645,6 +649,17 @@ function BulkUploadModal({
           const image_url = row[imageUrlIndex]?.trim() || "";
           const description = row[descriptionIndex]?.trim() || "";
           const redirectUrlsText = row[redirectUrlsIndex]?.trim() || "";
+          const id = idIndex > -1 ? row[idIndex]?.trim() : undefined;
+          const slug = slugIndex > -1 ? row[slugIndex]?.trim() : undefined;
+          let is_active = undefined;
+          if (isActiveIndex > -1) {
+            const activeText = row[isActiveIndex]?.trim().toLowerCase();
+            if (activeText === "yes" || activeText === "true" || activeText === "1") {
+              is_active = true;
+            } else if (activeText === "no" || activeText === "false" || activeText === "0") {
+              is_active = false;
+            }
+          }
 
           if (!name) {
             fileErrors.push(`Row ${i + 1}: Product name is required.`);
@@ -728,6 +743,9 @@ function BulkUploadModal({
             details.meta_description = row[metaDescIndex]?.trim();
 
           products.push({
+            id,
+            slug,
+            is_active,
             name,
             category,
             price,
@@ -790,10 +808,13 @@ function BulkUploadModal({
       const res = await fetch("/api/products/bulk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ products: parsedProducts }),
+        body: JSON.stringify({ 
+          products: parsedProducts,
+          mode: uploadMode
+        }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to upload products");
+      if (!res.ok) throw new Error(data.error || "Failed to process products");
       setSuccess(true);
       setTimeout(() => {
         onUploadComplete();
@@ -814,6 +835,7 @@ function BulkUploadModal({
     setSuccess(false);
     setDragActive(false);
     setActiveTab("upload");
+    setUploadMode("create");
   };
 
   if (!isOpen) return null;
@@ -919,6 +941,45 @@ function BulkUploadModal({
                     <FileText className="w-3.5 h-3.5 text-accent-coral" />{" "}
                     Download CSV Template
                   </Button>
+                </div>
+              </div>
+
+              {/* Operation Mode Selector */}
+              <div className="bg-gradient-to-r from-surface-container-low to-surface-container/60 border border-surface-container p-5 rounded-2xl space-y-3">
+                <label className="block text-xs font-bold text-primary uppercase tracking-wide">
+                  Operation Mode
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setUploadMode("create")}
+                    className={`flex items-center gap-3 p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      uploadMode === "create"
+                        ? "border-primary bg-primary/5 text-primary shadow-sm font-bold"
+                        : "border-outline/10 bg-white text-secondary hover:bg-surface-container-low"
+                    }`}
+                  >
+                    <Plus className="w-5 h-5 shrink-0" />
+                    <div>
+                      <div className="text-xs font-bold">Add New Products</div>
+                      <div className="text-[10px] opacity-70 font-normal mt-0.5">Creates new entries in your inventory</div>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUploadMode("edit")}
+                    className={`flex items-center gap-3 p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      uploadMode === "edit"
+                        ? "border-primary bg-primary/5 text-primary shadow-sm font-bold"
+                        : "border-outline/10 bg-white text-secondary hover:bg-surface-container-low"
+                    }`}
+                  >
+                    <Edit2 className="w-5 h-5 shrink-0" />
+                    <div>
+                      <div className="text-xs font-bold">Bulk Edit / Update</div>
+                      <div className="text-[10px] opacity-70 font-normal mt-0.5">Updates existing items by matching ID/Slug/Name</div>
+                    </div>
+                  </button>
                 </div>
               </div>
 
@@ -1078,7 +1139,11 @@ function BulkUploadModal({
                             </span>
                           </div>
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-body text-secondary leading-normal">
-                            {p.image_url ? (
+                            {uploadMode === "edit" ? (
+                              <span className="text-primary font-bold flex items-center gap-0.5">
+                                ✎ Update Match: {p.id ? `ID: ${p.id}` : p.slug ? `Slug: ${p.slug}` : `Name: ${p.name}`}
+                              </span>
+                            ) : p.image_url ? (
                               <span className="text-green-600 font-bold flex items-center gap-0.5">
                                 ✓ Main Image
                               </span>
@@ -1412,7 +1477,7 @@ function BulkUploadModal({
             <div className="text-[10px] font-body text-secondary">
               {activeTab === "upload" && parsedProducts.length > 0 && (
                 <span className="text-green-600 font-bold">
-                  ✓ Validation successful. Ready to import.
+                  ✓ Validation successful. Ready to {uploadMode === "edit" ? "update" : "import"}.
                 </span>
               )}
             </div>
@@ -1441,10 +1506,10 @@ function BulkUploadModal({
                   className="text-xs font-extrabold flex items-center gap-2 px-5 py-2.5 shadow-md active:scale-95 transition-transform duration-150 cursor-pointer"
                 >
                   {loading ? (
-                    <>Inserting products...</>
+                    <>{uploadMode === "edit" ? "Updating" : "Inserting"} products...</>
                   ) : (
                     <>
-                      <CheckCircle2 className="w-4 h-4" /> Import{" "}
+                      <CheckCircle2 className="w-4 h-4" /> {uploadMode === "edit" ? "Update" : "Import"}{" "}
                       {parsedProducts.length || ""} Products
                     </>
                   )}
