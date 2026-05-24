@@ -105,16 +105,16 @@ export default function ProductGrid({ initialProducts }: ProductGridProps) {
   const gridItems: { id: string; type: 'product' | 'ad'; data?: any }[] = [];
   filteredProducts.forEach((product, idx) => {
     gridItems.push({ id: product.id, type: 'product', data: product });
-    // Render native card ad exactly after the 4th item (index 3) ONLY if it's enabled in the database config
-    if (idx === 3 && isAdEnabled('homepage_grid')) {
-      gridItems.push({ id: 'grid-native-ad', type: 'ad' });
+    // Render native card ad after every 5 products (idx is 0-based, so idx = 4, 9, 14...)
+    if ((idx + 1) % 5 === 0 && isAdEnabled('homepage_grid')) {
+      gridItems.push({ id: `grid-native-ad-${idx + 1}`, type: 'ad' });
     }
   });
 
-  // If we have fewer than 4 products, and the native ad is enabled, we append the native ad at the end
-  if (filteredProducts.length > 0 && filteredProducts.length < 4 && isAdEnabled('homepage_grid')) {
-    if (!gridItems.some(item => item.id === 'grid-native-ad')) {
-      gridItems.push({ id: 'grid-native-ad', type: 'ad' });
+  // If we have fewer than 5 products, and the native ad is enabled, we append the native ad at the end
+  if (filteredProducts.length > 0 && filteredProducts.length < 5 && isAdEnabled('homepage_grid')) {
+    if (!gridItems.some(item => item.type === 'ad')) {
+      gridItems.push({ id: 'grid-native-ad-end', type: 'ad' });
     }
   }
 
