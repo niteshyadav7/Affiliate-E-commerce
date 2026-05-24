@@ -12,6 +12,7 @@ import {
   FileText,
   AlertCircle,
   CheckCircle2,
+  Download,
 } from "lucide-react";
 import Button from "@/components/atoms/Button";
 import ProductForm from "./ProductForm";
@@ -33,6 +34,65 @@ export default function ProductTable({ role = "viewer" }: { role?: string }) {
     navigator.clipboard.writeText(url);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const exportProductsToCSV = () => {
+    const headers = [
+      "ID",
+      "Name",
+      "Category",
+      "Price",
+      "Is Active",
+      "Slug",
+      "Landing Page URL",
+      "Short Redirect URL",
+      "Image URL",
+      "Description",
+      "Affiliate Links Count",
+      "Total Clicks"
+    ];
+
+    const baseUrl = window.location.origin;
+
+    const rows = products.map((product) => {
+      const slugOrId = product.slug || product.id;
+      const landingPageUrl = `${baseUrl}/product/${slugOrId}`;
+      const shortRedirectUrl = `${baseUrl}/r/${slugOrId}`;
+      const activeLinksCount = product.product_links?.length || 0;
+      const totalClicks = product.product_counters?.[0]?.total_clicks || 0;
+
+      return [
+        product.id || "",
+        product.name || "",
+        product.category || "",
+        product.price || "",
+        product.is_active ? "Yes" : "No",
+        product.slug || "",
+        landingPageUrl,
+        shortRedirectUrl,
+        product.image_url || "",
+        product.description || "",
+        activeLinksCount,
+        totalClicks,
+      ];
+    });
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) =>
+        row.map((val) => `"${val.toString().replace(/"/g, '""')}"`).join(","),
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `diversified-yp_products_export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const fetchProducts = async () => {
@@ -101,6 +161,14 @@ export default function ProductTable({ role = "viewer" }: { role?: string }) {
             All Products
           </h2>
           <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex items-center gap-2 text-xs border-primary/20 text-primary hover:bg-primary/5"
+              onClick={exportProductsToCSV}
+            >
+              <Download className="w-4 h-4" /> Export CSV
+            </Button>
             {role !== "viewer" && (
               <>
                 <Button
