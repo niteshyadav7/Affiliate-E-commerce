@@ -44,16 +44,18 @@ export default function RootLayout({
       lang="en"
       className={`${outfit.variable} ${inter.variable} ${playfair.variable}`}
     >
-      <body>
-        <Script
-          src="https://cloud.umami.is/script.js"
-          data-website-id="202fb15d-ba34-4193-bad0-f359836eb59b"
-          strategy="afterInteractive"
-        />
+      <head>
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6814953421558759"
           crossOrigin="anonymous"
+          strategy="beforeInteractive"
+        />
+      </head>
+      <body>
+        <Script
+          src="https://cloud.umami.is/script.js"
+          data-website-id="202fb15d-ba34-4193-bad0-f359836eb59b"
           strategy="afterInteractive"
         />
         <AdBanner slotId="header_top" />
