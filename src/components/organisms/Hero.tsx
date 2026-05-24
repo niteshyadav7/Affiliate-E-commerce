@@ -28,10 +28,10 @@ export default function Hero() {
             Experience the future of boutique e-commerce where curated quality meets unparalleled value.
           </p>
           
-          <div className="flex flex-wrap gap-4 mt-4">
+          {/* <div className="flex flex-wrap gap-4 mt-4">
             <Button size="lg" className="px-10">SHOP NOW</Button>
             <Button variant="outline" size="lg" className="px-10">VIEW DEALS</Button>
-          </div>
+          </div> */}
         </motion.div>
 
         {/* Right Visual */}
