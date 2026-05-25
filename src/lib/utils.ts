@@ -34,3 +34,28 @@ export function getDirectGoogleDriveLink(url: string): string {
   
   return url;
 }
+
+const OPTIMIZED_DOMAINS = [
+  'googleusercontent.com',
+  'drive.google.com',
+  'docs.google.com',
+  'media-amazon.com',
+  'ssl-images-amazon.com',
+  'unsplash.com',
+  'myntassets.com',
+  'nykaa.com'
+];
+
+/**
+ * Checks if an image URL belongs to a configured remote domain optimized by Next.js.
+ */
+export function isOptimizedDomain(url: string): boolean {
+  if (!url) return false;
+  try {
+    const hostname = new URL(url).hostname;
+    return OPTIMIZED_DOMAINS.some(domain => hostname === domain || hostname.endsWith('.' + domain));
+  } catch (e) {
+    return false;
+  }
+}
+

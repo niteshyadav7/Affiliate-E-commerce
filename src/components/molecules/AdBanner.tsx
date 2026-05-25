@@ -78,80 +78,125 @@ export default function AdBanner({ slotId, className = "" }: AdBannerProps) {
 
     // Script injection logic for Google AdSense or similar JS ads
     if (config.ad_type === "script" && config.script_code && containerRef.current) {
-      try {
-        // Clear container
-        containerRef.current.innerHTML = "";
+      // Safe script injection execution block
+      const injectScript = () => {
+        try {
+          if (!containerRef.current) return;
+          
+          // Clear container
+          containerRef.current.innerHTML = "";
 
-        // Parse HTML and Script tags
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(config.script_code, "text/html");
-        
-        // 1. Append HTML elements (like <ins class="adsbygoogle" ...>)
-        const bodyChildren = Array.from(doc.body.childNodes);
-        bodyChildren.forEach(node => {
-          if (node.nodeName !== "SCRIPT") {
-            containerRef.current?.appendChild(node.cloneNode(true));
+          // Parse HTML and Script tags
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(config.script_code, "text/html");
+          
+          // 1. Append HTML elements (like <ins class="adsbygoogle" ...>)
+          const bodyChildren = Array.from(doc.body.childNodes);
+          bodyChildren.forEach(node => {
+            if (node.nodeName !== "SCRIPT") {
+              containerRef.current?.appendChild(node.cloneNode(true));
+            }
+          });
+
+          // 2. Append and evaluate <script> elements
+          const scripts = Array.from(doc.querySelectorAll("script"));
+          scripts.forEach(oldScript => {
+            const newScript = document.createElement("script");
+            
+            // Copy attributes
+            Array.from(oldScript.attributes).forEach(attr => {
+              newScript.setAttribute(attr.name, attr.value);
+            });
+            
+            // Copy script body
+            newScript.textContent = oldScript.textContent;
+            
+            containerRef.current?.appendChild(newScript);
+          });
+
+          setLoaded(true);
+        } catch (err) {
+          console.error(`Failed to inject script for slot [${slotId}]:`, err);
+          setCollapsed(true);
+        }
+      };
+
+      // Wrap the adsbygoogle.push method on window to catch internal Adsense errors gracefully
+      if (typeof window !== "undefined") {
+        const win = window as any;
+        if (!win._adsbygoogle_intercepted) {
+          win._adsbygoogle_intercepted = true;
+          win.adsbygoogle = win.adsbygoogle || [];
+          const originalPush = win.adsbygoogle.push;
+          win.adsbygoogle.push = function(obj: any) {
+            try {
+              return originalPush.call(this, obj);
+            } catch (e: any) {
+              if (e.message && e.message.includes("No slot size for availableWidth=0")) {
+                console.warn("Caught Google AdSense error: No slot size for availableWidth=0. Hiding empty ad slot.");
+              } else {
+                console.error("AdSense push error:", e);
+              }
+            }
+          };
+        }
+      }
+
+      let cleanupResize: (() => void) | undefined;
+
+      // Defer script injection if the container is currently not visible in the DOM / width is 0
+      if (containerRef.current.offsetWidth === 0) {
+        let hasInjected = false;
+        const observer = new ResizeObserver((entries) => {
+          for (const entry of entries) {
+            if (entry.contentRect.width > 0 && !hasInjected) {
+              hasInjected = true;
+              injectScript();
+              observer.disconnect();
+            }
           }
         });
+        observer.observe(containerRef.current);
+        cleanupResize = () => observer.disconnect();
+      } else {
+        injectScript();
+      }
 
-        // 2. Append and evaluate <script> elements
-        const scripts = Array.from(doc.querySelectorAll("script"));
-        scripts.forEach(oldScript => {
-          const newScript = document.createElement("script");
+      // Check for "unfilled" or zero-height ads after a brief delay
+      const checkEmptyTimer = setTimeout(() => {
+        if (containerRef.current) {
+          const rect = containerRef.current.getBoundingClientRect();
+          const hasIns = containerRef.current.querySelector("ins");
+          const isUnfilled = hasIns?.getAttribute("data-ad-status") === "unfilled";
           
-          // Copy attributes
-          Array.from(oldScript.attributes).forEach(attr => {
-            newScript.setAttribute(attr.name, attr.value);
-          });
-          
-          // Copy script body
-          newScript.textContent = oldScript.textContent;
-          
-          containerRef.current?.appendChild(newScript);
-        });
+          // If the container is 0 height or marked unfilled by Google AdSense, collapse it
+          if (rect.height === 0 || isUnfilled) {
+            console.log(`Ad slot [${slotId}] is empty/unfilled. Collapsing space.`);
+            setCollapsed(true);
+          }
+        }
+      }, 1500);
 
-        setLoaded(true);
-
-        // Check for "unfilled" or zero-height ads after a brief delay
-        // Google AdSense usually sets data-ad-status or changes heights
-        const checkEmptyTimer = setTimeout(() => {
-          if (containerRef.current) {
-            const rect = containerRef.current.getBoundingClientRect();
-            const hasIns = containerRef.current.querySelector("ins");
-            const isUnfilled = hasIns?.getAttribute("data-ad-status") === "unfilled";
-            
-            // If the container is 0 height or marked unfilled by Google AdSense, collapse it
-            if (rect.height === 0 || isUnfilled) {
-              console.log(`Ad slot [${slotId}] is empty/unfilled. Collapsing space.`);
+      // Also setup a ResizeObserver to monitor dynamic collapse by the ad network
+      let resizeObserver: ResizeObserver | null = null;
+      if (typeof window !== "undefined" && "ResizeObserver" in window) {
+        resizeObserver = new ResizeObserver(entries => {
+          for (const entry of entries) {
+            const height = entry.contentRect.height;
+            // If ad loaded but then collapsed to 0
+            if (loaded && height === 0) {
               setCollapsed(true);
             }
           }
-        }, 1500);
-
-        // Also setup a ResizeObserver to monitor dynamic collapse by the ad network
-        let resizeObserver: ResizeObserver | null = null;
-        if (typeof window !== "undefined" && "ResizeObserver" in window) {
-          resizeObserver = new ResizeObserver(entries => {
-            for (const entry of entries) {
-              const height = entry.contentRect.height;
-              // If ad loaded but then collapsed to 0
-              if (loaded && height === 0) {
-                setCollapsed(true);
-              }
-            }
-          });
-          resizeObserver.observe(containerRef.current);
-        }
-
-        return () => {
-          clearTimeout(checkEmptyTimer);
-          resizeObserver?.disconnect();
-        };
-
-      } catch (err) {
-        console.error(`Failed to inject script for slot [${slotId}]:`, err);
-        setCollapsed(true);
+        });
+        resizeObserver.observe(containerRef.current);
       }
+
+      return () => {
+        clearTimeout(checkEmptyTimer);
+        resizeObserver?.disconnect();
+        if (cleanupResize) cleanupResize();
+      };
     }
   }, [config, loaded]);
 

@@ -18,7 +18,9 @@ async function getInitialProducts() {
     const { data, error } = await supabase
       .from('products')
       .select('*')
-      .eq('is_active', true);
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .range(0, 11);
 
     if (error) throw error;
 

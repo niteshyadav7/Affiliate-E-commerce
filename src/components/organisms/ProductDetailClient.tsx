@@ -15,12 +15,13 @@ import {
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import Button from "../atoms/Button";
 import Navbar from "./Navbar";
 import Masks from "../Masks";
 import AdBanner from "../molecules/AdBanner";
 import Footer from "./Footer";
-import { getDirectGoogleDriveLink } from "@/lib/utils";
+import { getDirectGoogleDriveLink, isOptimizedDomain } from "@/lib/utils";
 
 interface ProductLinkType {
   id: string;
@@ -173,6 +174,31 @@ export default function ProductDetailClient({
                     We are uploading a gorgeous showcase for this product soon.
                   </p>
                 </div>
+              ) : isOptimizedDomain(currentImageUrl) ? (
+                <motion.div
+                  key={activeImageIndex}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                  className="w-full h-full relative"
+                >
+                  <Image
+                    src={currentImageUrl}
+                    alt={`${formattedName} gallery image`}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    priority
+                    className="w-full h-full object-contain object-top bg-white group-hover:scale-105 transition-transform duration-500"
+                    onError={() => {
+                      if (currentImageUrl) {
+                        setImageErrors((prev) => ({
+                          ...prev,
+                          [currentImageUrl]: true,
+                        }));
+                      }
+                    }}
+                  />
+                </motion.div>
               ) : (
                 <motion.img
                   key={activeImageIndex}
@@ -211,11 +237,21 @@ export default function ProductDetailClient({
                         : "border-surface-container hover:border-primary/50"
                     }`}
                   >
-                    <img
-                      src={img}
-                      alt="thumbnail"
-                      className="w-full h-full object-contain object-top bg-white"
-                    />
+                    {isOptimizedDomain(img) ? (
+                      <Image
+                        src={img}
+                        alt="thumbnail"
+                        fill
+                        sizes="80px"
+                        className="w-full h-full object-contain object-top bg-white"
+                      />
+                    ) : (
+                      <img
+                        src={img}
+                        alt="thumbnail"
+                        className="w-full h-full object-contain object-top bg-white"
+                      />
+                    )}
                   </button>
                 ))}
               </div>
@@ -360,11 +396,21 @@ export default function ProductDetailClient({
                   >
                     <div>
                       <div className="aspect-square rounded-xl bg-surface-container-low mb-4 overflow-hidden relative border border-surface-container-high/10">
-                        <img
-                          src={getDirectGoogleDriveLink(p.image_url)}
-                          alt={formattedRelatedName}
-                          className="w-full h-full object-contain object-top bg-white"
-                        />
+                        {isOptimizedDomain(getDirectGoogleDriveLink(p.image_url)) ? (
+                          <Image
+                            src={getDirectGoogleDriveLink(p.image_url)}
+                            alt={formattedRelatedName}
+                            fill
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                            className="w-full h-full object-contain object-top bg-white"
+                          />
+                        ) : (
+                          <img
+                            src={getDirectGoogleDriveLink(p.image_url)}
+                            alt={formattedRelatedName}
+                            className="w-full h-full object-contain object-top bg-white"
+                          />
+                        )}
                       </div>
                       <h4 className="font-display text-body-md font-bold text-primary mb-1.5 line-clamp-2 break-words min-h-[44px] flex items-center leading-snug">
                         {formattedRelatedName}

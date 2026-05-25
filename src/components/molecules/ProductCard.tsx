@@ -5,7 +5,8 @@ import { motion } from 'motion/react';
 import { Package } from 'lucide-react';
 import Button from '../atoms/Button';
 import Link from 'next/link';
-import { getDirectGoogleDriveLink } from '@/lib/utils';
+import Image from 'next/image';
+import { getDirectGoogleDriveLink, isOptimizedDomain } from '@/lib/utils';
 
 interface ProductCardProps {
   id: string | number;
@@ -58,6 +59,16 @@ export default function ProductCard({
                 <Package className="w-10 h-10 stroke-[1.2] mb-1.5 text-primary/20 animate-pulse" />
                 <span className="text-[9px] font-bold uppercase tracking-widest text-primary/40 font-display">No Image</span>
               </div>
+            ) : isOptimizedDomain(getDirectGoogleDriveLink(image)) ? (
+              <Image 
+                className="w-full h-full object-contain object-top bg-white group-hover:scale-105 transition-transform duration-500" 
+                src={getDirectGoogleDriveLink(image)}
+                alt={name}
+                fill
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                priority={false}
+                onError={() => setImageError(true)}
+              />
             ) : (
               <img 
                 className="w-full h-full object-contain object-top bg-white group-hover:scale-105 transition-transform duration-500" 
