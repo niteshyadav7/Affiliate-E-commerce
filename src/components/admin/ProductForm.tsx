@@ -361,6 +361,22 @@ export default function ProductForm({ product, onSave, onCancel }: { product?: a
               <p className="text-[10px] text-on-secondary-container opacity-75 mt-0.5">
                 Provide external buying links. Multiple links will rotate in a round-robin rotation.
               </p>
+              
+              {/* Premium Auto-organic Tip Notice */}
+              <div className="flex items-start gap-2 mt-2 bg-gradient-to-r from-primary/5 via-primary/5 to-green-500/5 border border-primary/15 rounded-xl p-3 max-w-xl shadow-inner animate-in fade-in duration-300">
+                <span className="text-xs shrink-0 select-none">✨</span>
+                <div>
+                  <p className="text-[10px] font-bold text-primary leading-normal flex items-center gap-1.5">
+                    Auto-Organic Link Expansion
+                    <span className="bg-green-150 text-green-700 text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-wider scale-90 border border-green-200">
+                      Active
+                    </span>
+                  </p>
+                  <p className="text-[9px] text-on-secondary-container opacity-85 leading-normal mt-0.5">
+                    Simply paste **one** raw Amazon product link. When you save, the engine will automatically generate **5 highly authentic organic search click links**! Visitors will rotate through them, boosting your Amazon organic rank automatically.
+                  </p>
+                </div>
+              </div>
             </div>
             <Button 
               type="button" 

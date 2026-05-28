@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
-
 import { cookies } from 'next/headers';
+import { isValidAmazonUrl, generate5OrganicUrls } from '@/lib/organicUrlHelper';
 
 export async function POST(
   request: Request,
@@ -18,16 +18,44 @@ export async function POST(
     const body = await request.json();
     const { url, label, sort_order } = body;
 
-    const { data, error } = await supabaseServer
-      .from('product_links')
-      .insert([
-        { product_id: id, url, label, sort_order }
-      ])
-      .select()
-      .single();
+    if (isValidAmazonUrl(url) && !url.includes('crid=') && !url.includes('dib=')) {
+      // Fetch product name for keyword extraction
+      const { data: productData, error: productFetchError } = await supabaseServer
+        .from('products')
+        .select('name')
+        .eq('id', id)
+        .single();
+      
+      if (productFetchError) throw productFetchError;
+      const productName = productData?.name || '';
 
-    if (error) throw error;
-    return NextResponse.json(data);
+      const organicLinks = generate5OrganicUrls(url, productName);
+      const linksToInsert = organicLinks.map((ol, index) => ({
+        product_id: id,
+        url: ol.url,
+        label: ol.label,
+        sort_order: (sort_order || 0) + index
+      }));
+
+      const { data, error } = await supabaseServer
+        .from('product_links')
+        .insert(linksToInsert)
+        .select();
+
+      if (error) throw error;
+      return NextResponse.json(data);
+    } else {
+      const { data, error } = await supabaseServer
+        .from('product_links')
+        .insert([
+          { product_id: id, url, label, sort_order }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return NextResponse.json(data);
+    }
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
