@@ -1,6 +1,8 @@
 import HomePage from "@/components/organisms/HomePage";
 import { supabase } from "@/lib/supabase";
 
+export const dynamic = 'force-dynamic';
+
 // Fallback products definition in case database is empty or offline during server rendering
 const FALLBACK_PRODUCTS = [
   { id: 'a1b2c3d4-e5f6-4a5b-8c7d-9e0f1a2b3c4d', name: "Acoustic Pro Max", slug: "acoustic-pro-max", price: 299.00, category: "ELECTRONICS", tag: "ELECTRONICS", image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAZ8ZxBELdGezf2X1RdWRBcZSz3S9vJsXJj9bO0vnGYaNNcBB2dqbGQHF0yp0Cs6l1OZ1ghSB6UKe2pnKi6bFNsl98lWaVFRrrLsY3k0Xil55X8WLQZb8mf3SOTtv8uTNUipFW0rqaCXZSX00v7HFT4yUoHspg61T5c-961rzFzTadlOPfotNkJ1ZlLdSxcGd6_58s75nQrhpnasVHJ6vpBkzlzcgHUQaz2_ksINM4VvBrIOfD1G7HWd9JN-KnvpaXqBb7V0Arsc-b4" },

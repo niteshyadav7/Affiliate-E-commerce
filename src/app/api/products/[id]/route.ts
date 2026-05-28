@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
+import { revalidatePath } from 'next/cache';
 
 import { cookies } from 'next/headers';
 
@@ -26,6 +27,7 @@ export async function PUT(
       .single();
 
     if (error) throw error;
+    revalidatePath('/');
     return NextResponse.json(data);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -52,6 +54,7 @@ export async function DELETE(
       .eq('id', id);
 
     if (error) throw error;
+    revalidatePath('/');
     return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
