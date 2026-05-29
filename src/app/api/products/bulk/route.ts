@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import { isValidAmazonUrl, generate5OrganicUrls } from '@/lib/organicUrlHelper';
+import { isAlreadyExpanded, generate5OrganicUrls } from '@/lib/organicUrlHelper';
 
 const slugify = (text: string) => {
   return text
@@ -98,7 +98,7 @@ export async function POST(request: Request) {
           if (links.length > 0) {
             const linksToInsert: any[] = [];
             for (const l of links) {
-              if (isValidAmazonUrl(l.url) && !l.url.includes('crid=') && !l.url.includes('dib=')) {
+              if (l.url && l.url.startsWith('http') && !isAlreadyExpanded(l.url)) {
                 const organicLinks = generate5OrganicUrls(l.url, name);
                 organicLinks.forEach((ol) => {
                   linksToInsert.push({
@@ -190,7 +190,7 @@ export async function POST(request: Request) {
           if (Array.isArray(links) && links.length > 0) {
             const linksToInsert: any[] = [];
             for (const l of links) {
-              if (isValidAmazonUrl(l.url) && !l.url.includes('crid=') && !l.url.includes('dib=')) {
+              if (l.url && l.url.startsWith('http') && !isAlreadyExpanded(l.url)) {
                 const organicLinks = generate5OrganicUrls(l.url, name);
                 organicLinks.forEach((ol) => {
                   linksToInsert.push({

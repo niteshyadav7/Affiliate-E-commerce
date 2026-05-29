@@ -1,5 +1,5 @@
 /**
- * Organic Amazon URL Generation Utilities for E-commerce Rotator
+ * Organic Amazon, Flipkart, and Generic URL Generation Utilities
  */
 
 const CRID_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -195,6 +195,29 @@ export function generateOrganicUrl({
   return `${path}?${parts.join('&')}`;
 }
 
+export function slugify(text: string): string {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-');
+}
+
+export function isAlreadyExpanded(url: string): boolean {
+  if (!url) return false;
+  return url.includes('org_rot=1') || url.includes('crid=') || url.includes('dib=');
+}
+
+export function getHostname(url: string): string {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return '';
+  }
+}
+
 export function generateKeywordVariations(productName: string, titleSlug: string): string[][] {
   const cleanName = productName.toLowerCase().replace(/[^a-z0-9\s]+/g, ' ');
   const cleanSlug = titleSlug.toLowerCase().replace(/[^a-z0-9\s-]+/g, ' ').replace(/-/g, ' ');
@@ -270,31 +293,90 @@ export function generateKeywordVariations(productName: string, titleSlug: string
   return finalVariations.slice(0, 5);
 }
 
-export function generate5OrganicUrls(url: string, productName: string): { url: string; label: string }[] {
-  const asin = extractASIN(url);
-  if (!asin) return [];
-
-  const market = detectMarketplace(url);
-  const titleSlug = extractTitleSlug(url) || productName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-  const category = detectCategoryFromSlug(titleSlug);
-
-  // Generate 5 distinct keyword queries so that every single URL uses a different human search pattern!
+export function generateGenericOrganicLinks(url: string, productName: string): { url: string; label: string }[] {
+  const titleSlug = slugify(productName);
   const keywordVariations = generateKeywordVariations(productName, titleSlug);
-
   const results = [];
+
+  // We vary the search parameter keys to mimic natural variety across different e-commerce scripts
+  const searchKeys = ['q', 's', 'search', 'search_query', 'query'];
+
   for (let i = 1; i <= 5; i++) {
-    const currentKeywords = keywordVariations[i - 1] || [asin];
-    const orgUrl = generateOrganicUrl({
-      asin,
-      marketplace: market?.domain || 'amazon.in',
-      titleSlug,
-      keywords: currentKeywords,
-      category,
-    });
+    const currentKeywords = (keywordVariations[i - 1] || ['product']).join('+');
+    const qid = generateQid();
+    const pos = generatePosition();
+    const searchKey = searchKeys[i - 1] || 'q';
+    
+    const separator = url.includes('?') ? '&' : '?';
+    // Append standard organic parameters (keywords, timestamp, search position, and deduplication flag)
+    const orgUrl = `${url}${separator}${searchKey}=${encodeURIComponent(currentKeywords)}&ref=search&qid=${qid}&pos=${pos}&org_rot=1`;
+    
     results.push({
       url: orgUrl,
       label: `Organic Link ${i}`
     });
+  }
+
+  return results;
+}
+
+export function generate5OrganicUrls(url: string, productName: string): { url: string; label: string }[] {
+  // If it's already expanded, return it as a single link to prevent infinite loop
+  if (isAlreadyExpanded(url)) {
+    return [{ url, label: 'Link' }];
+  }
+
+  const hostname = getHostname(url).toLowerCase();
+  const isAmazon = hostname.includes('amazon.');
+  const isFlipkart = hostname.includes('flipkart.');
+
+  const results = [];
+  
+  if (isAmazon) {
+    const asin = extractASIN(url);
+    if (!asin) {
+      return generateGenericOrganicLinks(url, productName);
+    }
+    const market = detectMarketplace(url);
+    const titleSlug = extractTitleSlug(url) || slugify(productName);
+    const category = detectCategoryFromSlug(titleSlug);
+    const keywordVariations = generateKeywordVariations(productName, titleSlug);
+
+    for (let i = 1; i <= 5; i++) {
+      const currentKeywords = keywordVariations[i - 1] || [asin];
+      const orgUrl = generateOrganicUrl({
+        asin,
+        marketplace: market?.domain || 'amazon.in',
+        titleSlug,
+        keywords: currentKeywords,
+        category,
+      });
+      // Append signature to prevent double-expansion
+      const finalUrl = orgUrl.includes('?') ? `${orgUrl}&org_rot=1` : `${orgUrl}?org_rot=1`;
+      results.push({
+        url: finalUrl,
+        label: `Organic Link ${i}`
+      });
+    }
+  } else if (isFlipkart) {
+    const titleSlug = slugify(productName);
+    const keywordVariations = generateKeywordVariations(productName, titleSlug);
+
+    for (let i = 1; i <= 5; i++) {
+      const currentKeywords = (keywordVariations[i - 1] || ['product']).join('+');
+      const pos = generatePosition();
+      const qid = generateQid();
+      
+      const separator = url.includes('?') ? '&' : '?';
+      const orgUrl = `${url}${separator}q=${encodeURIComponent(currentKeywords)}&as-pos=${pos}&as-type=suggestion&otracker=search&qid=${qid}&org_rot=1`;
+      results.push({
+        url: orgUrl,
+        label: `Organic Link ${i}`
+      });
+    }
+  } else {
+    // DMart, Chupps, or other custom e-commerce stores
+    results.push(...generateGenericOrganicLinks(url, productName));
   }
 
   return results;

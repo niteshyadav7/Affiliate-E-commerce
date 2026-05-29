@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
 import { cookies } from 'next/headers';
-import { isValidAmazonUrl, generate5OrganicUrls } from '@/lib/organicUrlHelper';
+import { isAlreadyExpanded, generate5OrganicUrls } from '@/lib/organicUrlHelper';
 
 export async function POST(
   request: Request,
@@ -18,7 +18,7 @@ export async function POST(
     const body = await request.json();
     const { url, label, sort_order } = body;
 
-    if (isValidAmazonUrl(url) && !url.includes('crid=') && !url.includes('dib=')) {
+    if (url && url.startsWith('http') && !isAlreadyExpanded(url)) {
       // Fetch product name for keyword extraction
       const { data: productData, error: productFetchError } = await supabaseServer
         .from('products')
