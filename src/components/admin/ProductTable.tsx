@@ -340,6 +340,64 @@ function BulkUploadModal({
   const [sampleRowCopiedIdx, setSampleRowCopiedIdx] = useState<number | null>(
     null,
   );
+  const [processedProducts, setProcessedProducts] = useState<any[]>([]);
+
+  const exportUploadedToCSV = () => {
+    if (processedProducts.length === 0) return;
+    const headers = [
+      "ID",
+      "Name",
+      "Category",
+      "Price",
+      "Is Active",
+      "Slug",
+      "Landing Page URL",
+      "Short Redirect URL",
+      "Image URL",
+      "Description",
+      "Affiliate Links Count"
+    ];
+
+    const baseUrl = window.location.origin;
+
+    const rows = processedProducts.map((product) => {
+      const slugOrId = product.slug || product.id;
+      const landingPageUrl = `${baseUrl}/product/${slugOrId}`;
+      const shortRedirectUrl = `${baseUrl}/r/${slugOrId}`;
+      const activeLinksCount = product.product_links?.length || 0;
+
+      return [
+        product.id || "",
+        product.name || "",
+        product.category || "",
+        product.price || "",
+        product.is_active ? "Yes" : "No",
+        product.slug || "",
+        landingPageUrl,
+        shortRedirectUrl,
+        product.image_url || "",
+        product.description || "",
+        activeLinksCount,
+      ];
+    });
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) =>
+        row.map((val) => `"${(val || "").toString().replace(/"/g, '""')}"`).join(","),
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `diversified-yp_import_success_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const SCHEMA_COLUMNS = [
     {
@@ -815,12 +873,8 @@ function BulkUploadModal({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to process products");
+      setProcessedProducts(data.products || []);
       setSuccess(true);
-      setTimeout(() => {
-        onUploadComplete();
-        onClose();
-        resetModal();
-      }, 1500);
     } catch (err: any) {
       setErrors([err.message]);
     } finally {
@@ -831,6 +885,7 @@ function BulkUploadModal({
   const resetModal = () => {
     setFile(null);
     setParsedProducts([]);
+    setProcessedProducts([]);
     setErrors([]);
     setSuccess(false);
     setDragActive(false);
@@ -896,20 +951,59 @@ function BulkUploadModal({
         {/* Modal Scrollable Content */}
         <div className="p-6 overflow-y-auto space-y-5 flex-1 pr-4 bg-white">
           {success ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center border border-green-200 shadow-md mb-6 animate-bounce">
+            <div className="flex flex-col items-center justify-center py-12 text-center max-w-lg mx-auto space-y-6 animate-in fade-in zoom-in-95 duration-200">
+              <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center border border-green-200 shadow-md animate-bounce">
                 <CheckCircle2 className="w-10 h-10 text-green-500" />
               </div>
-              <h4 className="font-display text-xl font-bold text-primary">
-                Import Completed!
-              </h4>
-              <p className="text-sm font-body text-secondary max-w-sm mt-2">
-                Successfully uploaded and hydrated{" "}
-                <span className="text-primary font-bold">
-                  {parsedProducts.length} products
-                </span>{" "}
-                into the Diversified Y&P inventory.
-              </p>
+              <div className="space-y-2">
+                <h4 className="font-display text-2xl font-bold text-primary">
+                  Import Completed Successfully!
+                </h4>
+                <p className="text-sm font-body text-secondary">
+                  Successfully uploaded and hydrated{" "}
+                  <span className="text-primary font-bold">
+                    {processedProducts.length || parsedProducts.length} products
+                  </span>{" "}
+                  into the Diversified Y&P inventory.
+                </p>
+              </div>
+
+              {/* Action box for CSV Download */}
+              <div className="bg-gradient-to-r from-surface-container-low to-surface-container/40 border border-surface-container p-5 rounded-2xl w-full text-center space-y-4 shadow-sm">
+                <div className="space-y-1">
+                  <h5 className="text-xs font-bold text-primary flex items-center justify-center gap-1.5 uppercase tracking-wide">
+                    📦 Download Generated Redirect CSV
+                  </h5>
+                  <p className="text-[11px] font-body text-secondary leading-relaxed max-w-sm mx-auto">
+                    Grab the processed CSV containing newly assigned database IDs, generated SEO slugs, dynamic landing page URLs, and automated short redirect links.
+                  </p>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    onClick={exportUploadedToCSV}
+                    className="w-full sm:w-auto font-extrabold flex items-center justify-center gap-2 px-6 py-3 cursor-pointer shadow-md bg-accent-lime text-primary hover:bg-accent-lime/90 hover:scale-[1.02] transition-all"
+                  >
+                    <Download className="w-4 h-4" /> Download Processed CSV
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      onUploadComplete();
+                      onClose();
+                      resetModal();
+                    }}
+                    className="w-full sm:w-auto font-bold flex items-center justify-center gap-1.5 px-6 py-3 cursor-pointer border-surface-container bg-white text-secondary hover:bg-surface-container-low hover:text-primary transition-all"
+                  >
+                    Done & Refresh
+                  </Button>
+                </div>
+              </div>
             </div>
           ) : activeTab === "upload" ? (
             <>
