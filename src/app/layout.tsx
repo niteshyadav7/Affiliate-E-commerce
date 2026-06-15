@@ -45,7 +45,7 @@ export default function RootLayout({
       className={`${outfit.variable} ${inter.variable} ${playfair.variable}`}
     >
       <head>
-        <meta name="google-site-verification" content="b-UAkOD4xSSc_rQVuE_pP6BkXTo4PSeJ5I090" />
+        <meta name="google-site-verification" content="b-UAkOD4xSSc_rQVuE_pP6BkXTo4PSeJ5l09OCoea6c" />
         <script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6814953421558759"
